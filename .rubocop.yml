@@ -246,10 +246,6 @@ Style/IdenticalConditionalBranches:
 Style/InverseMethods:
   Enabled: false
 
-Style/MultipleComparison:
-  Enabled: true
-  ComparisonsThreshold: 3
-
 Style/NegatedIfElseCondition:
   Enabled: false
 

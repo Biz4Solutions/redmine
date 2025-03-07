@@ -440,10 +440,6 @@
     color: white;
   }
 
-  .flyout-menu .icon svg {
-    stroke: white;
-  }
-
   .flyout-menu ul li a:hover {
     text-decoration: none;
   }
@@ -564,10 +560,8 @@
   #admin-menu a.selected {
     line-height: 40px;
     padding: 0;
-  }
-
-  #admin-menu a.icon:not(:has(svg)) {
-    padding-left: 20px !important;
+    padding-left: 32px !important;
+    background-position: 8px 50%;
   }
 
   /*----------------------------------------*\

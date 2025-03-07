@@ -34,6 +34,21 @@
       </ul>
     </li>
   <% end %>
+  
+  <% if User.current.allowed_to?(:approve_time_entries, @project || @projects) %>
+    <% can_approve = @time_entries.any? { |entry| entry.can_approve?(User.current) } %>
+    <li>
+      <%= context_menu_link sprite_icon('checked', l(:label_approve)), 
+                          {:controller => 'timelog', :action => 'bulk_approve', :ids => @time_entries.collect(&:id), :back_url => @back},
+                          :method => :post, :class => 'icon icon-checked', :disabled => !can_approve %>
+    </li>
+    <li>
+      <%= context_menu_link sprite_icon('close', l(:label_reject)), 
+                          '#',
+                          :onclick => "showModal('bulk-reject-dialog', '330px'); return false;", 
+                          :class => 'icon icon-close', :disabled => !can_approve %>
+    </li>
+  <% end %>
 
   <%= call_hook(:view_time_entries_context_menu_end, {:time_entries => @time_entries, :can => @can, :back => @back }) %>
 
@@ -43,3 +58,22 @@
                           :method => :delete, :data => {:confirm => l(:text_time_entries_destroy_confirmation)}, :class => 'icon icon-del', :disabled => !@can[:delete] %>
   </li>
 </ul>
+
+<% if User.current.allowed_to?(:approve_time_entries, @project || @projects) %>
+<div id="bulk-reject-dialog" style="display:none;">
+  <h3 class="title"><%= l(:label_rejection_reason) %></h3>
+  <%= form_tag(bulk_reject_time_entries_path, :method => :post) do %>
+    <% @time_entries.each do |entry| %>
+      <%= hidden_field_tag 'ids[]', entry.id, :id => nil %>
+    <% end %>
+    <%= hidden_field_tag 'back_url', @back, :id => nil %>
+    <p>
+      <%= text_area_tag 'rejection_reason', '', :rows => 5, :class => 'wiki-edit' %>
+    </p>
+    <p class="buttons">
+      <%= submit_tag l(:label_reject), :class => 'button-small button-negative' %>
+      <%= link_to l(:button_cancel), '#', :onclick => "hideModal(this); return false;", :class => 'button-small' %>
+    </p>
+  <% end %>
+</div>
+<% end %>

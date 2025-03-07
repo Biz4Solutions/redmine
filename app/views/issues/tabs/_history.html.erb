@@ -27,7 +27,7 @@
     <% if Setting.thumbnails_enabled? && (thumbnail_attachments = journal_thumbnail_attachments(journal)).any? %>
       <div class="thumbnails">
         <% thumbnail_attachments.each do |attachment| %>
-          <%= thumbnail_tag(attachment) %>
+          <div><%= thumbnail_tag(attachment) %></div>
         <% end %>
       </div>
     <% end %>

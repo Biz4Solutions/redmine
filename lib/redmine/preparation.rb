@@ -95,7 +95,8 @@ module Redmine
                          {:projects => :settings, :project_enumerations => [:update, :destroy]},
                          :require => :member
           map.permission :log_time_for_other_users, :require => :member
-          map.permission :import_time_entries, {}
+          map.permission :import_time_entries, {:timelog_imports => [:new, :create, :show, :settings, :mapping, :run]}, :require => :member
+          map.permission :approve_time_entries, {:timelog => [:approve, :reject]}, :require => :member
         end
 
         map.project_module :news do |map|
@@ -200,12 +201,11 @@ module Redmine
         menu.push(
           :time_entries,
           {:controller => 'timelog', :action => 'index'},
-          :if =>
-            Proc.new do
-              User.current.allowed_to?(:view_time_entries, nil, :global => true) &&
-                EnabledModule.exists?(:project => Project.visible, :name => :time_tracking)
-            end,
-            :caption => :label_spent_time
+          :caption => :label_spent_time,
+          :if => Proc.new {
+            User.current.allowed_to?(:view_time_entries, nil, :global => true) ||
+            User.current.allowed_to?(:log_time, nil, :global => true)
+          }
         )
         menu.push(
           :gantt,
@@ -361,6 +361,9 @@ module Redmine
         )
         menu.push :time_entries, {:controller => 'timelog', :action => 'index'},
                   :param => :project_id, :caption => :label_spent_time
+        menu.push :pending_submission, {:controller => 'timelog', :action => 'pending_submission'},
+                  :caption => :label_pending_submission,
+                  :if => Proc.new { User.current.allowed_to?(:log_time, nil, :global => true) }
         menu.push :gantt, {:controller => 'gantts', :action => 'show'},
                   :param => :project_id, :caption => :label_gantt
         menu.push :calendar, {:controller => 'calendars', :action => 'show'},
@@ -408,7 +411,7 @@ module Redmine
 
       WikiFormatting.map do |format|
         format.register :textile
-        if Object.const_defined?(:Commonmarker)
+        if Object.const_defined?(:CommonMarker)
           format.register :common_mark, label: 'CommonMark Markdown (GitHub Flavored)'
         end
       end

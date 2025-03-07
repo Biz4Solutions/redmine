@@ -482,17 +482,15 @@ class ApplicationController < ActionController::Base
   end
   helper_method :back_url
 
-  def redirect_back_or_default(default, options = {})
-    referer = options.delete(:referer)
-
+  def redirect_back_or_default(default, options={})
     if back_url = validate_back_url(params[:back_url].to_s)
       redirect_to(back_url)
       return
-    elsif referer
+    elsif options[:referer]
       redirect_to_referer_or default
       return
     end
-    redirect_to default, options
+    redirect_to default
     false
   end
 

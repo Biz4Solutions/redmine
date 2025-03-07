@@ -6,14 +6,14 @@ gem 'rails', '7.2.2.1'
 gem 'rouge', '~> 4.5'
 gem 'mini_mime', '~> 1.1.0'
 gem "actionpack-xml_parser"
-gem 'roadie-rails', '~> 3.3.0'
+gem 'roadie-rails', '~> 3.2.0'
 gem 'marcel'
 gem 'mail', '~> 2.8.1'
-gem 'nokogiri', '~> 1.18.3'
+gem 'nokogiri', '~> 1.16.0'
 gem 'i18n', '~> 1.14.1'
 gem 'rbpdf', '~> 1.21.3'
 gem 'addressable'
-gem 'rubyzip', '~> 2.4.0'
+gem 'rubyzip', '~> 2.3.0'
 gem 'propshaft', '~> 1.1.0'
 gem 'rack', '>= 3.1.3'
 
@@ -41,12 +41,12 @@ end
 
 # Optional gem for exporting the gantt to a PNG file
 group :minimagick do
-  gem 'mini_magick', '~> 5.1.0'
+  gem 'mini_magick', '~> 5.0.1'
 end
 
 # Optional CommonMark support, not for JRuby
 group :common_mark do
-  gem "commonmarker", '~> 1.1.0'
+  gem "commonmarker", '~> 0.23.8'
   gem 'deckar01-task_list', '2.3.2'
 end
 
@@ -75,7 +75,7 @@ if File.exist?(database_file)
       when /postgresql/
         gem 'pg', '~> 1.5.3'
       when /sqlite3/
-        gem 'sqlite3', '~> 2.5.0'
+        gem 'sqlite3', '~> 1.7.0'
       when /sqlserver/
         gem 'tiny_tds', '~> 2.1.2'
         gem 'activerecord-sqlserver-adapter', '~> 7.2.0'
@@ -110,10 +110,9 @@ group :test do
   gem "capybara", ">= 3.39"
   gem 'selenium-webdriver', '>= 4.11.0'
   # RuboCop
-  gem 'rubocop', '~> 1.69.0', require: false
-  gem 'rubocop-performance', '~> 1.23.0', require: false
-  gem 'rubocop-rails', '~> 2.29.0', require: false
-  gem 'bundle-audit', require: false
+  gem 'rubocop', '~> 1.68.0', require: false
+  gem 'rubocop-performance', '~> 1.22.0', require: false
+  gem 'rubocop-rails', '~> 2.27.0', require: false
 end
 
 local_gemfile = File.join(File.dirname(__FILE__), "Gemfile.local")

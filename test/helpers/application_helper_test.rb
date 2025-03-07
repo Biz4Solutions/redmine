@@ -1658,7 +1658,7 @@ class ApplicationHelperTest < Redmine::HelperTest
     end
   end
 
-  if Object.const_defined?(:Commonmarker)
+  if Object.const_defined?(:CommonMarker)
     def test_toc_with_markdown_formatting_should_be_parsed
       with_settings :text_formatting => 'common_mark' do
         assert_select_in textilizable("{{toc}}\n\n# Heading"), 'ul.toc li', :text => 'Heading'
@@ -1918,12 +1918,11 @@ class ApplicationHelperTest < Redmine::HelperTest
   end
 
   def test_thumbnail_tag
-    attachment = Attachment.find(3)
-    assert_select_in thumbnail_tag(attachment), 'div.thumbnail[title=?]', 'logo.gif' do
-      assert_select 'a[href=?]', '/attachments/3' do
-        assert_select 'img[alt=?][src=?][loading="lazy"]', "logo.gif", "/attachments/thumbnail/3/200"
-      end
-    end
+    a = Attachment.find(3)
+    assert_select_in(
+      thumbnail_tag(a),
+      'a[href=?] img[title=?][alt=?][src=?][loading="lazy"]',
+      "/attachments/3", "logo.gif", "logo.gif", "/attachments/thumbnail/3/200")
   end
 
   def test_link_to_project
@@ -2210,15 +2209,11 @@ class ApplicationHelperTest < Redmine::HelperTest
     set_language_if_valid 'en'
 
     with_settings :timespan_format => 'minutes' do
-      assert_equal '-0:45', format_hours(-0.75)
-      assert_equal '0:00', format_hours(0)
       assert_equal '0:45', format_hours(0.75)
       assert_equal '0:45 h', l_hours_short(0.75)
       assert_equal '0:45 hour', l_hours(0.75)
     end
     with_settings :timespan_format => 'decimal' do
-      assert_equal '-0.75', format_hours(-0.75)
-      assert_equal '0.00', format_hours(0)
       assert_equal '0.75', format_hours(0.75)
       assert_equal '0.75 h', l_hours_short(0.75)
       assert_equal '0.75 hour', l_hours(0.75)
@@ -2332,35 +2327,6 @@ class ApplicationHelperTest < Redmine::HelperTest
       assert_equal ';', l(:general_csv_separator)
       assert_select_in result, 'option[value=?][selected=selected]', ';'
     end
-  end
-
-  def test_format_activity_description_should_strip_quoted_text
-    text = <<~TEXT
-      John Smith wrote in #note-1:
-      > The quick brown fox
-      > jumps over the lazy dog.
-
-      Brick quiz whangs jumpy veldt fox.
-
-      > The five
-
-      > boxing wizards
-
-      > jump quickly.
-
-      The quick onyx goblin jumps over the lazy dwarf.
-    TEXT
-
-    expected =
-      'John Smith wrote in #note-1:<br>' \
-      '&gt; The quick brown fox<br>' \
-      '&gt; ...<br>' \
-      'Brick quiz whangs jumpy veldt fox.<br>' \
-      '&gt; The five<br>' \
-      '&gt; ...<br>' \
-      'The quick onyx goblin jumps over the lazy dwarf.<br>'
-
-    assert_equal expected, format_activity_description(text)
   end
 
   private

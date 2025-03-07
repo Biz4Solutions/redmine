@@ -94,9 +94,8 @@ module Redmine
 
       minutes = (hours * 60).round
       if Setting.timespan_format == 'minutes'
-        h, m = minutes.abs.divmod(60)
-        sign = minutes.negative? ? '-' : ''
-        "%s%d:%02d" % [sign, h, m]
+        h, m = minutes.divmod(60)
+        "%d:%02d" % [h, m]
       else
         number_with_delimiter(sprintf('%.2f', minutes.fdiv(60)), delimiter: nil)
       end
@@ -111,7 +110,7 @@ module Redmine
     #       will clash with the dot separator.
     def normalize_float(value)
       separator = ::I18n.t('number.format.separator')
-      value.to_s.gsub(/[#{separator}]/, separator => '.')
+      value.gsub(/[#{separator}]/, separator => '.')
     end
 
     def day_name(day)

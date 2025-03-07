@@ -1,0 +1,16 @@
+<div id="bulk-reject-dialog" style="display:none;">
+  <h3 class="title"><%= l(:label_rejection_reason) %></h3>
+  <%= form_tag(bulk_reject_time_entries_path, :method => :post) do %>
+    <% time_entries.each do |entry| %>
+      <%= hidden_field_tag 'ids[]', entry.id, :id => nil %>
+    <% end %>
+    <%= hidden_field_tag 'back_url', back_url, :id => nil if back_url.present? %>
+    <p>
+      <%= text_area_tag 'rejection_reason', '', :rows => 5, :class => 'wiki-edit' %>
+    </p>
+    <p class="buttons">
+      <%= submit_tag l(:label_reject_selected), :class => 'button-small button-negative' %>
+      <%= link_to l(:button_cancel), '#', :onclick => "hideModal(this); return false;", :class => 'button-small' %>
+    </p>
+  <% end %>
+</div> 

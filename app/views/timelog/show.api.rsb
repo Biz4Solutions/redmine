@@ -9,6 +9,12 @@ api.time_entry do
   api.spent_on @time_entry.spent_on
   api.created_on @time_entry.created_on
   api.updated_on @time_entry.updated_on
+  
+  # Approval workflow fields
+  api.status @time_entry.status
+  api.approved_by(:id => @time_entry.approved_by_id, :name => @time_entry.approved_by.try(:name)) if @time_entry.approved_by_id
+  api.approved_on @time_entry.approved_on
+  api.rejection_reason @time_entry.rejection_reason
 
-  render_api_custom_values @time_entry.custom_field_values, api
+  render_api_custom_values @time_entry.visible_custom_field_values, api
 end

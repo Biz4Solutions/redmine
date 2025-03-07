@@ -106,4 +106,4 @@ Install Stylelint:
 `yarn install`
 
 You can run Stylelint with:
-`npx stylelint "app/assets/stylesheets/**/*.css"`
+`node_modules/.bin/stylelint "app/assets/stylesheets/**/*.css"`

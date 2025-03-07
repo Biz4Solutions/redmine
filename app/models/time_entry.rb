@@ -26,7 +26,29 @@ class TimeEntry < ApplicationRecord
   belongs_to :user
   belongs_to :author, :class_name => 'User'
   belongs_to :activity, :class_name => 'TimeEntryActivity'
+  belongs_to :approved_by, :class_name => 'User', optional: true
 
+  # Status values for timesheet approval workflow
+  STATUS_PENDING = 'pending'
+  STATUS_APPROVED = 'approved'
+  STATUS_REJECTED = 'rejected'
+  
+  # Scopes for timesheet approval workflow
+  scope :pending_approval, -> { where(status: STATUS_PENDING) }
+  scope :approved, -> { where(status: STATUS_APPROVED) }
+  scope :rejected, -> { where(status: STATUS_REJECTED) }
+  scope :for_user, ->(user_id) { where(user_id: user_id) }
+  scope :for_project, ->(project_id) { where(project_id: project_id) }
+  scope :for_date_range, ->(start_date, end_date) { where("spent_on BETWEEN ? AND ?", start_date, end_date) }
+  
+  # Additional validation for timesheet approval workflow
+  validate :cannot_modify_approved_entry, on: :update
+  
+  # Callbacks for email notifications
+  after_create :send_pending_approval_notification
+  after_save :send_approval_notification, if: -> { saved_change_to_status? && status == STATUS_APPROVED }
+  after_save :send_rejection_notification, if: -> { saved_change_to_status? && status == STATUS_REJECTED }
+  
   acts_as_customizable
   acts_as_event(
     :title =>
@@ -57,6 +79,7 @@ class TimeEntry < ApplicationRecord
   # TODO: remove this, author should be always explicitly set
   before_validation :set_author_if_nil
   validate :validate_time_entry
+  validate :validate_member_allocation
 
   scope :visible, (lambda do |*args|
     joins(:project).
@@ -184,6 +207,54 @@ class TimeEntry < ApplicationRecord
     end
   end
 
+  def validate_member_allocation
+    return unless user && project && spent_on
+    
+    # Find the member record for this user and project
+    member = Member.where(user_id: user_id, project_id: project_id).first
+    
+    if member.nil?
+      errors.add :base, I18n.t(:error_user_not_allocated_to_project)
+      return
+    end
+    
+    # Check if the spent_on date is within the member's allocation period
+    unless member.active_on?(spent_on)
+      if member.start_date && spent_on < member.start_date
+        errors.add :spent_on, I18n.t(:error_spent_on_before_allocation_start, 
+                                     :start_date => format_date(member.start_date))
+      elsif member.end_date && spent_on > member.end_date
+        errors.add :spent_on, I18n.t(:error_spent_on_after_allocation_end, 
+                                     :end_date => format_date(member.end_date))
+      else
+        errors.add :spent_on, I18n.t(:error_user_not_allocated_to_project_on_date)
+      end
+      return
+    end
+    
+    # Check if the hours exceed the user's allocation percentage
+    if member.allocation_percentage < 100
+      # Calculate the maximum hours allowed per day based on allocation percentage
+      # Assuming 8-hour workday as standard
+      max_hours_per_day = 8.0 * (member.allocation_percentage / 100.0)
+      
+      # Get all time entries for this user on this date
+      total_hours_on_date = TimeEntry.where(
+        user_id: user_id, 
+        spent_on: spent_on
+      ).where.not(id: id).sum(:hours).to_f
+      
+      # Add the current hours
+      total_hours_on_date += hours.to_f
+      
+      if total_hours_on_date > max_hours_per_day
+        errors.add :hours, I18n.t(:error_exceeds_allocation_percentage, 
+                                  :max_hours => format_hours(max_hours_per_day),
+                                  :allocation => member.allocation_percentage)
+      end
+    end
+  end
+
   def hours=(h)
     write_attribute :hours, (h.is_a?(String) ? (h.to_hours || h) : h)
   end
@@ -247,7 +318,60 @@ class TimeEntry < ApplicationRecord
     users
   end
 
+  # Returns true if the time entry can be approved or rejected
+  def can_approve?(user)
+    return false if user.nil? || user.id == self.user_id # Can't approve own time entries
+    return false if status != STATUS_PENDING # Can only approve pending entries
+    
+    # Check if the user is a manager in the project
+    user.allowed_to?(:approve_time_entries, project)
+  end
+  
+  # Approves the time entry
+  def approve(approver)
+    return false unless can_approve?(approver)
+    
+    self.status = STATUS_APPROVED
+    self.approved_by_id = approver.id
+    self.approved_on = Time.now
+    self.rejection_reason = nil
+    save
+  end
+  
+  # Rejects the time entry with a reason
+  def reject(approver, reason)
+    return false unless can_approve?(approver)
+    
+    self.status = STATUS_REJECTED
+    self.approved_by_id = approver.id
+    self.approved_on = Time.now
+    self.rejection_reason = reason
+    save
+  end
+  
+  # Returns true if the time entry is pending approval
+  def pending_approval?
+    status == STATUS_PENDING
+  end
+  
+  # Returns true if the time entry is approved
+  def approved?
+    status == STATUS_APPROVED
+  end
+  
+  # Returns true if the time entry is rejected
+  def rejected?
+    status == STATUS_REJECTED
+  end
+  
   private
+  
+  # Validation to prevent modification of approved entries
+  def cannot_modify_approved_entry
+    if status_was == STATUS_APPROVED && (hours_changed? || spent_on_changed? || project_id_changed? || issue_id_changed? || activity_id_changed?)
+      errors.add(:base, I18n.t(:error_cannot_modify_approved_time_entry))
+    end
+  end
 
   # Returns the hours that were logged in other time entries for the same user and the same day
   def other_hours_with_same_user_and_day
@@ -259,5 +383,20 @@ class TimeEntry < ApplicationRecord
     else
       0.0
     end
+  end
+  
+  # Send notification to approvers when a time entry is created
+  def send_pending_approval_notification
+    Mailer.deliver_time_entry_pending_approval(self)
+  end
+  
+  # Send notification to the time entry author when it's approved
+  def send_approval_notification
+    Mailer.deliver_time_entry_approved(self)
+  end
+  
+  # Send notification to the time entry author when it's rejected
+  def send_rejection_notification
+    Mailer.deliver_time_entry_rejected(self)
   end
 end

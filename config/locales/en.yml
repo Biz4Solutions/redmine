@@ -138,6 +138,12 @@ en:
         must_contain_special_chars: "must contain special characters (!, $, %, ...)"
         domain_not_allowed: "contains a domain not allowed (%{domain})"
         too_simple: "is too simple"
+      models:
+        member:
+          attributes:
+            allocation_percentage:
+              invalid_range: must be between 0 and 100
+              exceeds_total: would exceed 100% total allocation for this user
 
   actionview_instancetag_blank_option: Please select
 
@@ -959,9 +965,9 @@ en:
   label_user_mail_option_only_owner: "Only for things I watch or I am the owner of"
   label_user_mail_no_self_notified: "I don't want to be notified of changes that I make myself"
   label_user_mail_notify_about_high_priority_issues_html: "Also notify me about issues with a priority of <em>%{prio}</em> or higher"
-  label_registration_activation_by_email: Self account activation by email verification
-  label_registration_manual_activation: Account activation by administrator approval
-  label_registration_automatic_activation: Automatic account activation
+  label_registration_activation_by_email: account activation by email
+  label_registration_manual_activation: manual account activation
+  label_registration_automatic_activation: automatic account activation
   label_display_per_page: "Per page: %{value}"
   label_age: Age
   label_change_properties: Change properties
@@ -1299,7 +1305,7 @@ en:
   text_reassign_time_entries: 'Reassign reported hours to this issue:'
   text_user_wrote: "%{value} wrote:"
   text_user_wrote_in: "%{value} wrote in %{link}:"
-  text_enumeration_destroy_question: "%{count} objects are assigned to the value “%{name}”."
+  text_enumeration_destroy_question: "%{count} objects are assigned to the value \"%{name}\""
   text_enumeration_category_reassign_to: 'Reassign them to this value:'
   text_email_delivery_not_configured: "Email delivery is not configured, and notifications are disabled.\nConfigure your SMTP server in config/configuration.yml and restart the application to enable them."
   text_repository_usernames_mapping: "Select or update the Redmine user mapped to each username found in the repository log.\nUsers with the same Redmine and repository username or email are automatically mapped."
@@ -1424,4 +1430,93 @@ en:
   text_user_destroy_confirmation: "Are you sure you want to delete this user and remove all references to them? This cannot be undone. Often, locking a user instead of deleting them is the better solution. To confirm, please enter their login (%{login}) below."
   text_project_destroy_enter_identifier: "To confirm, please enter the project's identifier (%{identifier}) below."
   field_name_or_email_or_login: Name, email or login
-  setting_wiki_tablesort_enabled: Javascript based table sorting in wiki content
+
+  # Member allocation
+  field_allocation_percentage: "Allocation percentage"
+  field_start_date: "Start date"
+  field_end_date: "End date"
+  label_allocation: "Allocation"
+  
+  error_user_not_allocated_to_project: "User is not allocated to this project"
+  error_user_not_allocated_to_project_on_date: "User is not allocated to this project on the specified date"
+  error_spent_on_before_allocation_start: "Date is before the allocation start date (%{start_date})"
+  error_spent_on_after_allocation_end: "Date is after the allocation end date (%{end_date})"
+  error_exceeds_allocation_percentage: "Exceeds maximum hours (%{max_hours}) based on allocation percentage (%{allocation}%)"
+
+  # Timesheet approval workflow
+  label_timesheet_approval: "Timesheet Approval"
+  label_pending_approval: "Pending Approval"
+  label_approved: "Approved"
+  label_rejected: "Rejected"
+  label_approve: "Approve"
+  label_reject: "Reject"
+  label_rejection_reason: "Rejection Reason"
+  label_approve_selected: "Approve Selected"
+  label_reject_selected: "Reject Selected"
+  label_approve_all: "Approve All"
+  label_reject_all: "Reject All"
+  
+  field_status: "Status"
+  field_approved_by: "Approved By"
+  field_approved_on: "Approved On"
+  field_rejection_reason: "Rejection Reason"
+  
+  permission_approve_time_entries: "Approve time entries"
+  
+  error_cannot_modify_approved_time_entry: "Cannot modify an approved time entry"
+  notice_time_entry_approved: "Time entry was successfully approved"
+  notice_time_entry_rejected: "Time entry was successfully rejected"
+  notice_time_entries_approved: "%{count} time entries were successfully approved"
+  notice_time_entries_rejected: "%{count} time entries were successfully rejected"
+
+  # Email subjects
+  mail_subject_time_entry_pending_approval: "Time entry pending approval"
+  mail_subject_time_entry_approved: "Time entry approved"
+  mail_subject_time_entry_rejected: "Time entry rejected"
+  mail_subject_time_entry_pending_approval_reminder: "Pending time entries require your approval"
+
+  # Email bodies
+  mail_body_time_entry_pending_approval: "%{user} has submitted %{hours} hours for %{project} that requires your approval."
+  mail_body_time_entry_approved: "%{approver} has approved your time entry of %{hours} hours for %{project}."
+  mail_body_time_entry_rejected: "%{approver} has rejected your time entry of %{hours} hours for %{project}."
+  mail_body_time_entry_pending_approval_reminder: "You have %{count} time entries waiting for your approval."
+
+  # Field labels
+  field_status: "Status"
+  field_approved_by: "Approved by"
+  field_approved_on: "Approved on"
+  field_rejected_on: "Rejected on"
+  field_rejection_reason: "Rejection reason"
+  
+  # Button labels
+  label_approve: "Approve"
+  label_reject: "Reject"
+  label_approve_selected: "Approve Selected"
+  label_reject_selected: "Reject Selected"
+  label_pending_approval: "Pending Approval"
+  label_approved: "Approved"
+  label_rejected: "Rejected"
+  label_rejection_reason: "Rejection Reason"
+
+  # Flash messages
+  notice_time_entry_approved: "Time entry was successfully approved."
+  notice_time_entry_rejected: "Time entry was successfully rejected."
+  notice_time_entries_approved: "%{count} time entries were successfully approved."
+  notice_time_entries_rejected: "%{count} time entries were successfully rejected."
+
+  label_pending_approval: "Pending Approval"
+  label_approved: "Approved"
+  label_rejected: "Rejected"
+  label_rejection_reason: "Rejection Reason"
+  label_pending_timesheets: "Pending Timesheets for Approval"
+  label_my_pending_time_entries: "My Pending Time Entries"
+  label_submit_for_approval: "Submit for Approval"
+  label_submit_selected_for_approval: "Submit Selected for Approval"
+  label_pending_submission: "Pending Submission Time Entries"
+  
+  error_not_your_time_entry: "You can only submit your own time entries"
+  error_time_entry_already_submitted: "This time entry has already been submitted"
+  error_rejection_reason_required: "Rejection reason is required"
+  
+  notice_time_entry_submitted: "Time entry was successfully submitted for approval"
+  notice_time_entries_submitted: "%{count} time entries were successfully submitted for approval"

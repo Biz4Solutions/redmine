@@ -346,18 +346,19 @@ module ApplicationHelper
   def thumbnail_tag(attachment)
     thumbnail_size = Setting.thumbnails_size.to_i
     thumbnail_path = thumbnail_path(attachment, :size => thumbnail_size * 2)
-    tag.div class: 'thumbnail', title: attachment.filename do
-      link_to(
-        image_tag(
-          thumbnail_path,
-          :srcset => "#{thumbnail_path} 2x",
-          :style => "max-width: #{thumbnail_size}px; max-height: #{thumbnail_size}px;",
-          :alt => attachment.filename,
-          :loading => "lazy"
-        ),
-        attachment_path(attachment)
+    link_to(
+      image_tag(
+        thumbnail_path,
+        :srcset => "#{thumbnail_path} 2x",
+        :style => "max-width: #{thumbnail_size}px; max-height: #{thumbnail_size}px;",
+        :title => attachment.filename,
+        :alt => attachment.filename,
+        :loading => "lazy"
+      ),
+      attachment_path(
+        attachment
       )
-    end
+    )
   end
 
   def toggle_link(name, id, options={})
@@ -414,16 +415,8 @@ module ApplicationHelper
   end
 
   def format_activity_description(text)
-    h(
-      # Limit input to avoid regex performance issues
-      text.to_s.slice(0, 10240)
-      # Abbreviate consecutive quoted lines as '> ...', keeping the first line
-      .gsub(%r{(^>.*?(?:\r?\n))(?:>.*?(?:\r?\n)+)+}m, "\\1> ...\n")
-      # Remove all content following the first <pre> or <code> tag
-      .sub(%r{[\r\n]*<(pre|code)>.*$}m, '')
-      # Truncate the description to a specified length and append '...'
-      .truncate(240)
-    ).gsub(/[\r\n]+/, "<br>").html_safe
+    h(text.to_s.truncate(120).gsub(%r{[\r\n]*<(pre|code)>.*$}m, '...')).
+      gsub(/[\r\n]+/, "<br />").html_safe
   end
 
   def format_version_name(version)
@@ -1798,12 +1791,12 @@ module ApplicationHelper
     tags = javascript_include_tag(
       'jquery-3.7.1-ui-1.13.3',
       'rails-ujs',
-      'tribute-5.1.3.min'
+      'tribute-5.1.3.min',
+      'tablesort-5.2.1.min.js',
+      'tablesort-5.2.1.number.min.js',
+      'application',
+      'responsive'
     )
-    if Setting.wiki_tablesort_enabled?
-      tags << javascript_include_tag('tablesort-5.2.1.min.js', 'tablesort-5.2.1.number.min.js')
-    end
-    tags << javascript_include_tag('application', 'responsive')
     unless User.current.pref.warn_on_leaving_unsaved == '0'
       warn_text = escape_javascript(l(:text_warn_on_leaving_unsaved))
       tags <<

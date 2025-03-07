@@ -27,11 +27,15 @@ class Member < ApplicationRecord
   validates_presence_of :principal, :project
   validates_uniqueness_of :user_id, :scope => :project_id, :case_sensitive => true
   validate :validate_role
-
+  validate :validate_allocation_percentage
+  
+  before_save :set_default_dates
   before_destroy :set_issue_category_nil, :remove_from_project_default_assigned_to
 
   scope :active, (lambda do
     joins(:principal).where(:users => {:status => Principal::STATUS_ACTIVE})
+      .where("(members.end_date IS NULL OR members.end_date >= ?)", Date.today)
+      .where("(members.start_date IS NULL OR members.start_date <= ?)", Date.today)
   end)
   # Sort by first role and principal
   scope :sorted, (lambda do
@@ -67,13 +71,15 @@ class Member < ApplicationRecord
     ids |= member_roles.select {|mr| !mr.inherited_from.nil?}.collect(&:role_id)
 
     new_role_ids = ids - role_ids
-    obsolete_role_ids = role_ids - ids
     # Add new roles
     new_role_ids.each do |id|
       member_roles << MemberRole.new(:role_id => id, :member => self)
     end
     # Remove roles (Rails' #role_ids= will not trigger MemberRole#on_destroy)
-    member_roles.where(role_id: obsolete_role_ids).destroy_all
+    member_roles_to_destroy = member_roles.select {|mr| !ids.include?(mr.role_id)}
+    if member_roles_to_destroy.any?
+      member_roles_to_destroy.each(&:destroy)
+    end
     member_roles.reload
     super(ids)
   end
@@ -209,6 +215,14 @@ class Member < ApplicationRecord
       project_ids.each do |project_id|
         member = Member.find_or_initialize_by(:project_id => project_id, :user_id => principal.id)
         member.role_ids |= role_ids
+        
+        # Set allocation fields
+        member.allocation_percentage = attributes[:allocation_percentage] if attributes[:allocation_percentage].present?
+        member.start_date = attributes[:start_date] if attributes[:start_date].present?
+        member.end_date = attributes[:end_date] if attributes[:end_date].present?
+        
+        # Save the member but don't raise an exception if it fails
+        # This allows us to collect all errors
         member.save
         members << member
       end
@@ -216,9 +230,86 @@ class Member < ApplicationRecord
     members
   end
 
+  # Returns true if the member is active on the given date
+  def active_on?(date=Date.today)
+    return false unless principal.active?
+    (start_date.nil? || start_date <= date) && (end_date.nil? || end_date >= date)
+  end
+  
+  # Returns true if the member is currently active
+  def active?
+    active_on?(Date.today)
+  end
+  
+  # Returns true if the member has expired (end_date is in the past)
+  def expired?
+    end_date.present? && end_date < Date.today
+  end
+  
+  # Returns the total allocation percentage for a user across all active projects
+  def self.total_allocation_for_user(user_id, date=Date.today)
+    where(user_id: user_id)
+      .where("(start_date IS NULL OR start_date <= ?)", date)
+      .where("(end_date IS NULL OR end_date >= ?)", date)
+      .sum(:allocation_percentage) || 0
+  end
+  
+  # Deactivate expired memberships
+  def self.deactivate_expired
+    where("end_date < ?", Date.today).find_each do |member|
+      # We don't actually delete the membership, just mark it as inactive
+      # by setting allocation_percentage to 0
+      member.update_column(:allocation_percentage, 0)
+    end
+  end
+
   protected
 
   def validate_role
     errors.add(:role, :empty) if member_roles.empty? && roles.empty?
+  end
+
+  def validate_allocation_percentage
+    return if allocation_percentage.nil?
+    
+    if allocation_percentage <= 0 || allocation_percentage > 100
+      errors.add(:allocation_percentage, :invalid_range, message: "must be between 0 and 100")
+      return
+    end
+    
+    # Skip validation if user_id is not set yet (happens during initial form submission)
+    return if user_id.nil?
+    
+    # Calculate total allocation for this user including this record
+    date = Date.today
+    
+    # Get all active allocations for this user except this one
+    other_allocations = self.class.where(user_id: user_id)
+                            .where("(start_date IS NULL OR start_date <= ?)", date)
+                            .where("(end_date IS NULL OR end_date >= ?)", date)
+    
+    # Exclude this record if it's being updated
+    other_allocations = other_allocations.where.not(id: id) unless new_record?
+    
+    # Sum up other allocations
+    total_other_allocations = other_allocations.sum(:allocation_percentage) || 0
+    
+    # Add the new allocation percentage
+    total = total_other_allocations + allocation_percentage
+    
+    if total > 100
+      errors.add(:allocation_percentage, :exceeds_total, 
+                message: "would exceed 100% total allocation for this user (total would be #{total}%)")
+    end
+  end
+  
+  def set_default_dates
+    if start_date.nil? && project.present?
+      self.start_date = project.start_date
+    end
+    
+    if end_date.nil? && project.present?
+      self.end_date = project.due_date
+    end
   end
 end

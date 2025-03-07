@@ -728,7 +728,7 @@ class Mailer < ActionMailer::Base
     if block
       super
     else
-      super do |format|
+      super(headers) do |format|
         format.text
         format.html unless Setting.plain_text_mail?
       end
@@ -768,6 +768,97 @@ class Mailer < ActionMailer::Base
         pluck(:address)
     end
     mails
+  end
+
+  # Builds a mail to notify a user that their time entry needs approval
+  def time_entry_pending_approval(user, time_entry)
+    redmine_headers 'Project' => time_entry.project.identifier,
+                    'Time-Entry-Id' => time_entry.id,
+                    'Time-Entry-Author' => time_entry.user.login
+    @time_entry = time_entry
+    @user = user
+    @time_entry_url = url_for(:controller => 'timelog', :action => 'index', :project_id => time_entry.project, :issue_id => time_entry.issue)
+    mail :to => user,
+      :subject => "[#{time_entry.project.name}] #{l(:mail_subject_time_entry_pending_approval)}: #{time_entry.hours} #{l(:field_hours)}"
+  end
+
+  # Notifies approvers about a new time entry that needs approval
+  def self.deliver_time_entry_pending_approval(time_entry)
+    # Find all users who can approve time entries in this project
+    approvers = time_entry.project.members.joins(:roles)
+                         .where("#{Role.table_name}.permissions LIKE '%:approve_time_entries%'")
+                         .map(&:user).uniq
+    
+    # Don't notify the time entry author
+    approvers.reject! {|user| user.id == time_entry.user_id}
+    
+    approvers.each do |user|
+      time_entry_pending_approval(user, time_entry).deliver_later
+    end
+  end
+
+  # Builds a mail to notify a user that their time entry was approved
+  def time_entry_approved(user, time_entry)
+    redmine_headers 'Project' => time_entry.project.identifier,
+                    'Time-Entry-Id' => time_entry.id,
+                    'Time-Entry-Approver' => time_entry.approved_by.login
+    @time_entry = time_entry
+    @user = user
+    @time_entry_url = url_for(:controller => 'timelog', :action => 'index', :project_id => time_entry.project, :issue_id => time_entry.issue)
+    mail :to => user,
+      :subject => "[#{time_entry.project.name}] #{l(:mail_subject_time_entry_approved)}: #{time_entry.hours} #{l(:field_hours)}"
+  end
+
+  # Notifies the time entry author that their entry was approved
+  def self.deliver_time_entry_approved(time_entry)
+    time_entry_approved(time_entry.user, time_entry).deliver_later
+  end
+
+  # Builds a mail to notify a user that their time entry was rejected
+  def time_entry_rejected(user, time_entry)
+    redmine_headers 'Project' => time_entry.project.identifier,
+                    'Time-Entry-Id' => time_entry.id,
+                    'Time-Entry-Approver' => time_entry.approved_by.login
+    @time_entry = time_entry
+    @user = user
+    @time_entry_url = url_for(:controller => 'timelog', :action => 'index', :project_id => time_entry.project, :issue_id => time_entry.issue)
+    mail :to => user,
+      :subject => "[#{time_entry.project.name}] #{l(:mail_subject_time_entry_rejected)}: #{time_entry.hours} #{l(:field_hours)}"
+  end
+
+  # Notifies the time entry author that their entry was rejected
+  def self.deliver_time_entry_rejected(time_entry)
+    time_entry_rejected(time_entry.user, time_entry).deliver_later
+  end
+
+  # Builds a mail to remind approvers about pending time entries
+  def time_entry_pending_approval_reminder(user, time_entries)
+    @time_entries = time_entries
+    @user = user
+    @time_entries_url = url_for(:controller => 'timelog', :action => 'index', :set_filter => 1, :status => TimeEntry::STATUS_PENDING)
+    mail :to => user,
+      :subject => "[#{Setting.app_title}] #{l(:mail_subject_time_entry_pending_approval_reminder)}: #{time_entries.size} #{l(:field_time_entries)}"
+  end
+
+  # Sends reminders to approvers about pending time entries
+  def self.deliver_time_entry_pending_approval_reminders
+    # Group pending time entries by project
+    pending_entries_by_project = TimeEntry.pending_approval.group_by(&:project)
+    
+    pending_entries_by_project.each do |project, entries|
+      # Find all users who can approve time entries in this project
+      approvers = project.members.joins(:roles)
+                         .where("#{Role.table_name}.permissions LIKE '%:approve_time_entries%'")
+                         .map(&:user).uniq
+      
+      approvers.each do |user|
+        # Only send reminder if there are entries this user can approve
+        approvable_entries = entries.select {|entry| entry.can_approve?(user)}
+        if approvable_entries.any?
+          time_entry_pending_approval_reminder(user, approvable_entries).deliver_later
+        end
+      end
+    end
   end
 
   private

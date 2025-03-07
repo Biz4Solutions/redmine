@@ -82,7 +82,6 @@ module Redmine
     private
 
     def file_name=(arg)
-      # rubocop:disable Style/FileNull
       both_git_diff = false
       if file_name.nil?
         @git_diff = true if %r{^(a/|/dev/null)}.match?(arg)
@@ -107,7 +106,6 @@ module Redmine
       else
         @file_name = arg
       end
-      # rubocop:enable Style/FileNull
     end
 
     def diff_for_added_line

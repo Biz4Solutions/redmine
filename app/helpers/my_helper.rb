@@ -69,9 +69,18 @@ module MyHelper
   def block_select_tag(user)
     blocks_in_use = user.pref.my_page_layout.values.flatten
     options = content_tag('option')
-    Redmine::MyPage.block_options(blocks_in_use).each do |label, block|
+    
+    block_options = Redmine::MyPage.block_options(blocks_in_use)
+    
+    # Filter out the pending_timesheets block for users without approve_time_entries permission
+    unless user.allowed_to?(:approve_time_entries, nil, :global => true)
+      block_options.reject! { |label, block| block == 'pending_timesheets' }
+    end
+    
+    block_options.each do |label, block|
       options << content_tag('option', label, :value => block, :disabled => block.blank?)
     end
+    
     select_tag('block', options, :id => "block-select", :onchange => "$('#block-form').submit();")
   end
 
@@ -183,5 +192,29 @@ module MyHelper
     events_by_day = Redmine::Activity::Fetcher.new(User.current, :author => User.current).events(nil, nil, :limit => 10).group_by {|event| User.current.time_to_date(event.event_datetime)}
 
     render :partial => 'my/blocks/activity', :locals => {:events_by_day => events_by_day}
+  end
+
+  def render_pending_timesheets_block(block, settings)
+    # Find time entries that need approval and the user has permission to approve
+    entries = TimeEntry.pending_approval.joins(:project => :members).
+      where("#{Member.table_name}.user_id = ?", User.current.id).
+      joins("INNER JOIN #{MemberRole.table_name} ON #{MemberRole.table_name}.member_id = #{Member.table_name}.id").
+      joins("INNER JOIN #{Role.table_name} ON #{Role.table_name}.id = #{MemberRole.table_name}.role_id").
+      where("#{Role.table_name}.permissions LIKE '%:approve_time_entries%'").
+      where("#{TimeEntry.table_name}.user_id <> ?", User.current.id).
+      order("#{TimeEntry.table_name}.spent_on DESC").
+      limit(10)
+      
+    render :partial => 'my/blocks/pending_timesheets', :locals => {:entries => entries, :block => block}
+  end
+
+  def render_my_pending_time_entries_block(block, settings)
+    # Find the user's time entries that are pending approval
+    entries = TimeEntry.pending_approval.
+      where(:user_id => User.current.id).
+      order("#{TimeEntry.table_name}.spent_on DESC").
+      limit(10)
+      
+    render :partial => 'my/blocks/my_pending_time_entries', :locals => {:entries => entries, :block => block}
   end
 end
