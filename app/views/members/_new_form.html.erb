@@ -1,7 +1,8 @@
 <fieldset class="box">
   <legend><%= label_tag("principal_search", l(:label_principal_search)) %></legend>
   <p><%= text_field_tag('principal_search', nil) %></p>
-  <%= javascript_tag "observeSearchfield('principal_search', null, '#{ escape_javascript autocomplete_project_memberships_path(@project, :format => 'js') }')" %>
+  <%= hidden_field_tag 'membership[user_id]', nil, id: 'selected_user_id' %>
+  <%= javascript_tag "observeSearchfield('principal_search', 'selected_user_id', '#{ escape_javascript autocomplete_project_memberships_path(@project, :format => 'js') }')" %>
   <div id="principals_for_new_member">
     <%= render_principals_for_new_members(@project) %>
   </div>
@@ -18,7 +19,9 @@
   <legend><%= l(:label_allocation) %></legend>
   <p>
     <%= label_tag 'membership[allocation_percentage]', l(:field_allocation_percentage) %>
-    <%= number_field_tag 'membership[allocation_percentage]', 100, min: 0, max: 100, step: 0.01 %>%
+    <%= number_field_tag 'membership[allocation_percentage]', 100, min: 0, max: 100, step: 0.01, 
+        onchange: "updateMaxHours(this.value)" %>
+    <span id="max_hours_display"></span>
   </p>
   <p>
     <%= label_tag 'membership[start_date]', l(:field_start_date) %>
@@ -29,3 +32,48 @@
     <%= date_field_tag 'membership[end_date]', @project.due_date %>
   </p>
 </fieldset>
+
+<% content_for :header_tags do %>
+<%= javascript_tag do %>
+function updateMaxHours(percentage) {
+  var maxHours = (8.0 * percentage / 100.0).toFixed(2);
+  document.getElementById('max_hours_display').textContent = '[' + maxHours + ' hours max]';
+}
+
+function updateMaxAvailability(userId) {
+  if (!userId) return;
+  
+  fetch('/members/max_availability/' + userId)
+    .then(response => response.json())
+    .then(data => {
+      var maxAvailability = 100 - data.total_allocation;
+      var maxHours = (8.0 * maxAvailability / 100.0).toFixed(2);
+      document.getElementById('max_availability_display').textContent = 
+        '(' + maxAvailability + '%, ' + maxHours + ' hours)';
+    });
+}
+
+// Initialize max hours display
+document.addEventListener('DOMContentLoaded', function() {
+  updateMaxHours(100);
+  
+  // Add event listener for principal search
+  var principalSearch = document.getElementById('principal_search');
+  if (principalSearch) {
+    principalSearch.addEventListener('input', function() {
+      var searchValue = this.value.toLowerCase();
+      var labels = document.querySelectorAll('#principals label');
+      labels.forEach(function(label) {
+        var text = label.textContent.toLowerCase();
+        label.style.display = text.includes(searchValue) ? 'block' : 'none';
+      });
+    });
+  }
+});
+<% end %>
+<% end %>
+
+<div id="max_availability_display" style="margin-top: 10px; font-weight: bold; white-space: nowrap;"></div>
+<div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+  <em>Note: Numbers in brackets indicate available allocation percentage and corresponding hours per day.</em>
+</div>

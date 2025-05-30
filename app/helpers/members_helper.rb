@@ -28,7 +28,7 @@ module MembersHelper
         'div',
         content_tag(
           'div',
-          principals_check_box_tags('membership[user_ids][]', principals),
+          principals_radio_tags('membership[user_id]', principals),
           :id => 'principals'
         ),
         :class => 'objects-selection'
@@ -46,6 +46,30 @@ module MembersHelper
           :remote => true)
       end
     s + content_tag('span', links, :class => 'pagination')
+  end
+
+  def principals_radio_tags(name, principals)
+    principals.collect do |principal|
+      if principal.is_a?(User)
+        total_allocation = Member.total_allocation_for_user(principal.id)
+        max_availability = 100 - total_allocation
+        content_tag(
+          'label',
+          radio_button_tag(name, principal.id, false,
+            :onchange => "updateMaxAvailability(#{principal.id})") +
+          content_tag('span', "#{principal.name} (#{max_availability}%)",
+            :style => 'white-space: nowrap;'),
+          :class => 'block'
+        )
+      else
+        content_tag(
+          'label',
+          radio_button_tag(name, principal.id, false) +
+          principal.name,
+          :class => 'block'
+        )
+      end
+    end.join("\n").html_safe
   end
 
   # Returns inheritance information for an inherited member role

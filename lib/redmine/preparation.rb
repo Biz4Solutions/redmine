@@ -207,6 +207,11 @@ module Redmine
             User.current.allowed_to?(:log_time, nil, :global => true)
           }
         )
+        menu.push :timesheets, {:controller => 'timesheets', :action => 'index'},
+          :caption => :label_timesheets,
+          :if => Proc.new {
+            User.current.logged?
+          }
         menu.push(
           :gantt,
           {:controller => 'gantts', :action => 'show'},
@@ -237,6 +242,11 @@ module Redmine
             end,
           :caption => :label_news_plural
         )
+        menu.push :pending_submission, {:controller => 'timelog', :action => 'pending_submission'},
+          :caption => :label_pending_submission,
+          :if => Proc.new {
+            User.current.allowed_to?(:log_time, nil, :global => true)
+          }
       end
 
       MenuManager.map :admin_menu do |menu|

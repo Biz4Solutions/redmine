@@ -1,0 +1,8 @@
+<h2><%= l(:label_timesheet_edit) %></h2>
+
+<%= form_for @timesheet do |f| %>
+  <%= render :partial => 'form', :locals => { :f => f } %>
+  <%= submit_tag l(:button_save) %>
+<% end %>
+
+<% html_title l(:label_timesheet_edit) %> 

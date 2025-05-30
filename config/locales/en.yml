@@ -1432,7 +1432,8 @@ en:
   field_name_or_email_or_login: Name, email or login
 
   # Member allocation
-  field_allocation_percentage: "Allocation percentage"
+  field_allocation_percentage: "Allocation %"
+  field_total_allocation: "Total allocation"
   field_start_date: "Start date"
   field_end_date: "End date"
   label_allocation: "Allocation"
@@ -1441,7 +1442,7 @@ en:
   error_user_not_allocated_to_project_on_date: "User is not allocated to this project on the specified date"
   error_spent_on_before_allocation_start: "Date is before the allocation start date (%{start_date})"
   error_spent_on_after_allocation_end: "Date is after the allocation end date (%{end_date})"
-  error_exceeds_allocation_percentage: "Exceeds maximum hours (%{max_hours}) based on allocation percentage (%{allocation}%)"
+  error_exceeds_allocation_percentage: "Exceeds maximum hours (%{max_hours}) based on allocation % (%{allocation}%)"
 
   # Timesheet approval workflow
   label_timesheet_approval: "Timesheet Approval"
@@ -1513,6 +1514,10 @@ en:
   label_submit_for_approval: "Submit for Approval"
   label_submit_selected_for_approval: "Submit Selected for Approval"
   label_pending_submission: "Pending Submission Time Entries"
+  label_timesheets: "Timesheets"
+  label_timesheet_new: "New Timesheet"
+  label_draft: "Draft"
+  label_week: "Week"
   
   error_not_your_time_entry: "You can only submit your own time entries"
   error_time_entry_already_submitted: "This time entry has already been submitted"
@@ -1520,3 +1525,52 @@ en:
   
   notice_time_entry_submitted: "Time entry was successfully submitted for approval"
   notice_time_entries_submitted: "%{count} time entries were successfully submitted for approval"
+
+  error_spent_on_future_date: "Cannot log time on a future date"
+  error_not_allowed_to_log_time_for_other_users: "You are not allowed to log time for other users"
+  error_can_not_execute_macro_html: "Error executing the <strong>%{name}</strong> macro (%{error})"
+  error_macro_does_not_accept_block: "This macro does not accept a block of text"
+  error_childpages_macro_no_argument: "With no argument, this macro can be called from wiki pages only"
+  error_circular_inclusion: "Circular inclusion detected"
+  error_page_not_found: "Page not found"
+  error_filename_required: "Filename required"
+  error_not_your_time_entry: "You can only submit your own time entries"
+  error_time_entry_already_submitted: "This time entry has already been submitted"
+  error_rejection_reason_required: "Rejection reason is required"
+  error_cannot_modify_approved_time_entry: "Cannot modify an approved time entry"
+  error_cannot_modify_time_entry_in_submitted_timesheet: "Cannot modify a time entry in a submitted timesheet"
+  error_user_not_allocated_to_project: "User is not allocated to this project"
+  error_user_not_allocated_to_project_on_date: "User is not allocated to this project on the specified date"
+  error_spent_on_before_allocation_start: "Cannot log time before allocation start date (%{start_date})"
+  error_spent_on_after_allocation_end: "Cannot log time after allocation end date (%{end_date})"
+  error_exceeds_allocation_percentage: "Hours exceed user's allocation % (maximum %{max_hours} hours per day at %{allocation}% allocation)"
+
+  label_pending_submission: "Pending Submission Time Entries"
+  label_timesheets: "Timesheets"
+  label_timesheet_new: "New Timesheet"
+  label_draft: "Draft"
+  label_week: "Week"
+  label_pending_approval: "Pending Approval"
+  label_approved: "Approved"
+  label_rejected: "Rejected"
+  label_rejection_reason: "Rejection Reason"
+  label_pending_timesheets: "Pending Timesheets for Approval"
+  label_my_pending_time_entries: "My Pending Time Entries"
+  label_submit_for_approval: "Submit for Approval"
+  label_submit_selected_for_approval: "Submit Selected for Approval"
+  label_approve_selected: "Approve Selected"
+  label_reject_selected: "Reject Selected"
+  label_date_range: "Date Range"
+  
+  field_week: "Week"
+  field_date_range: "Date Range"
+  field_approved_by: "Approved By"
+  field_approved_on: "Approved On"
+  field_rejection_reason: "Rejection Reason"
+  
+  notice_timesheet_submitted: "Timesheet was successfully submitted for approval"
+  notice_timesheets_submitted: "%{count} timesheets were successfully submitted for approval"
+  notice_timesheets_approved: "%{count} timesheets were successfully approved"
+  notice_timesheets_rejected: "%{count} timesheets were successfully rejected"
+
+  label_project_allocations: "Project Allocations"

@@ -1,0 +1,129 @@
+<div class="contextual">
+  <% if @timesheet.user_id == User.current.id && @timesheet.draft? %>
+    <%= link_to l(:button_edit), edit_timesheet_path(@timesheet), :class => 'icon icon-edit' %>
+    <%= link_to l(:button_delete), timesheet_path(@timesheet), 
+                :method => :delete, 
+                :data => {:confirm => l(:text_are_you_sure)}, 
+                :class => 'icon icon-del' %>
+    <% if @timesheet.can_submit? %>
+      <%= link_to l(:label_submit_for_approval), submit_timesheet_path(@timesheet), 
+                  :method => :post, 
+                  :class => 'icon icon-checked' %>
+    <% end %>
+  <% end %>
+  
+  <% if @timesheet.pending_approval? && User.current.allowed_to_globally?(:approve_time_entries) && @timesheet.can_approve?(User.current) %>
+    <%= link_to l(:label_approve), bulk_approve_timesheets_path(:ids => [@timesheet.id]), 
+                :method => :post, 
+                :class => 'icon icon-checked' %>
+    <%= link_to l(:label_reject), '#', 
+                :onclick => "showModal('reject-dialog', '350px'); return false;",
+                :class => 'icon icon-cancel' %>
+  <% end %>
+</div>
+
+<h2><%= l(:label_timesheet) %> #<%= @timesheet.id %></h2>
+
+<div class="issue details">
+  <div class="attributes">
+    <div class="attribute">
+      <div class="label"><%= l(:field_user) %>:</div>
+      <div class="value"><%= link_to_user(@timesheet.user) %></div>
+    </div>
+    <div class="attribute">
+      <div class="label"><%= l(:field_week) %>:</div>
+      <div class="value"><%= @timesheet.week_number %></div>
+    </div>
+    <div class="attribute">
+      <div class="label"><%= l(:field_date_range) %>:</div>
+      <div class="value"><%= @timesheet.date_range %></div>
+    </div>
+    <div class="attribute">
+      <div class="label"><%= l(:field_status) %>:</div>
+      <div class="value">
+        <% case @timesheet.status %>
+        <% when Timesheet::STATUS_DRAFT %>
+          <span class="badge badge-info"><%= l(:label_draft) %></span>
+        <% when Timesheet::STATUS_PENDING %>
+          <span class="badge badge-warning"><%= l(:label_pending_approval) %></span>
+        <% when Timesheet::STATUS_APPROVED %>
+          <span class="badge badge-success"><%= l(:label_approved) %></span>
+        <% when Timesheet::STATUS_REJECTED %>
+          <span class="badge badge-error"><%= l(:label_rejected) %></span>
+        <% end %>
+      </div>
+    </div>
+    <% if @timesheet.approved? || @timesheet.rejected? %>
+    <div class="attribute">
+      <div class="label"><%= l(:field_approved_by) %>:</div>
+      <div class="value"><%= link_to_user(@timesheet.approved_by) if @timesheet.approved_by %></div>
+    </div>
+    <div class="attribute">
+      <div class="label"><%= l(:field_approved_on) %>:</div>
+      <div class="value"><%= format_time(@timesheet.approved_on) if @timesheet.approved_on %></div>
+    </div>
+    <% end %>
+    <% if @timesheet.rejected? %>
+    <div class="attribute">
+      <div class="label"><%= l(:field_rejection_reason) %>:</div>
+      <div class="value"><%= simple_format(@timesheet.rejection_reason) %></div>
+    </div>
+    <% end %>
+    <div class="attribute">
+      <div class="label"><%= l(:field_total_hours) %>:</div>
+      <div class="value"><%= html_hours(format_hours(@timesheet.total_hours)) %></div>
+    </div>
+  </div>
+</div>
+
+<div class="autoscroll">
+<h3><%= l(:label_time_entry_plural) %></h3>
+<table class="list time-entries">
+  <thead>
+    <tr>
+      <th><%= l(:field_spent_on) %></th>
+      <th><%= l(:field_project) %></th>
+      <th><%= l(:field_issue) %></th>
+      <th><%= l(:field_hours) %></th>
+      <th><%= l(:field_activity) %></th>
+      <th><%= l(:field_comments) %></th>
+    </tr>
+  </thead>
+  <tbody>
+  <% @time_entries.each do |time_entry| %>
+    <tr class="time-entry <%= cycle('odd', 'even') %>">
+      <td class="spent-on"><%= format_date(time_entry.spent_on) %></td>
+      <td class="project"><%= link_to_project(time_entry.project) %></td>
+      <td class="subject">
+        <% if time_entry.issue %>
+          <%= link_to_issue(time_entry.issue, :truncate => 50) %>
+        <% end %>
+      </td>
+      <td class="hours"><%= html_hours(format_hours(time_entry.hours)) %></td>
+      <td class="activity"><%= time_entry.activity %></td>
+      <td class="comments"><%= time_entry.comments %></td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+</div>
+
+<% if @timesheet.pending_approval? && User.current.allowed_to_globally?(:approve_time_entries) && @timesheet.can_approve?(User.current) %>
+<div id="reject-dialog" style="display:none;">
+  <h3 class="title"><%= l(:label_rejection_reason) %></h3>
+  <%= form_tag bulk_reject_timesheets_path, :method => :post do %>
+    <div class="box">
+      <p>
+        <%= text_area_tag 'rejection_reason', nil, :cols => 60, :rows => 10, :class => 'wiki-edit', :required => true %>
+      </p>
+      <p>
+        <%= hidden_field_tag 'ids[]', @timesheet.id %>
+        <%= submit_tag l(:button_submit) %>
+        <%= link_to l(:button_cancel), '#', :onclick => "hideModal(this);", :class => 'button-small' %>
+      </p>
+    </div>
+  <% end %>
+</div>
+<% end %>
+
+<% html_title "#{l(:label_timesheet)} ##{@timesheet.id}: #{@timesheet.user.name}" %> 

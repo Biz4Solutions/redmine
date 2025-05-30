@@ -27,6 +27,7 @@ class TimeEntry < ApplicationRecord
   belongs_to :author, :class_name => 'User'
   belongs_to :activity, :class_name => 'TimeEntryActivity'
   belongs_to :approved_by, :class_name => 'User', optional: true
+  belongs_to :timesheet, optional: true
 
   # Status values for timesheet approval workflow
   STATUS_PENDING = 'pending'
@@ -40,14 +41,18 @@ class TimeEntry < ApplicationRecord
   scope :for_user, ->(user_id) { where(user_id: user_id) }
   scope :for_project, ->(project_id) { where(project_id: project_id) }
   scope :for_date_range, ->(start_date, end_date) { where("spent_on BETWEEN ? AND ?", start_date, end_date) }
+  scope :without_timesheet, -> { where(timesheet_id: nil) }
   
   # Additional validation for timesheet approval workflow
   validate :cannot_modify_approved_entry, on: :update
+  validate :cannot_modify_if_timesheet_submitted, on: :update
   
   # Callbacks for email notifications
   after_create :send_pending_approval_notification
   after_save :send_approval_notification, if: -> { saved_change_to_status? && status == STATUS_APPROVED }
   after_save :send_rejection_notification, if: -> { saved_change_to_status? && status == STATUS_REJECTED }
+  after_create :assign_to_timesheet
+  after_update :update_timesheet_assignment, if: -> { saved_change_to_spent_on? }
   
   acts_as_customizable
   acts_as_event(
@@ -286,9 +291,12 @@ class TimeEntry < ApplicationRecord
 
   # Returns true if the time entry can be edited by usr, otherwise false
   def editable_by?(usr)
-    visible?(usr) && (
-      (usr == user && usr.allowed_to?(:edit_own_time_entries, project)) || usr.allowed_to?(:edit_time_entries, project)
-    )
+    visible?(usr) && 
+    (
+      (usr == user && usr.allowed_to?(:edit_own_time_entries, project)) || 
+      usr.allowed_to?(:edit_time_entries, project)
+    ) &&
+    (!timesheet || timesheet.draft?)
   end
 
   # Returns the custom_field_values that can be edited by the given user
@@ -372,21 +380,42 @@ class TimeEntry < ApplicationRecord
       errors.add(:base, I18n.t(:error_cannot_modify_approved_time_entry))
     end
   end
-
-  # Returns the hours that were logged in other time entries for the same user and the same day
-  def other_hours_with_same_user_and_day
-    if user_id && spent_on
-      TimeEntry.
-        where(:user_id => user_id, :spent_on => spent_on).
-        where.not(:id => id).
-        sum(:hours).to_f
-    else
-      0.0
+  
+  # Validation to prevent modification of entries in submitted timesheets
+  def cannot_modify_if_timesheet_submitted
+    if timesheet && !timesheet.draft? && (hours_changed? || spent_on_changed? || project_id_changed? || issue_id_changed? || activity_id_changed?)
+      errors.add(:base, I18n.t(:error_cannot_modify_time_entry_in_submitted_timesheet))
+    end
+  end
+  
+  # Assigns the time entry to the appropriate timesheet based on the spent_on date
+  def assign_to_timesheet
+    # Find or create a timesheet for this user and date
+    if user && spent_on
+      self.timesheet = Timesheet.find_or_create_for_user_and_date(user, spent_on)
+      save(validate: false) if timesheet_id_changed?
+    end
+  end
+  
+  # Updates the timesheet assignment if the spent_on date changes
+  def update_timesheet_assignment
+    # Remove from old timesheet
+    old_timesheet = self.timesheet
+    
+    # Assign to new timesheet
+    assign_to_timesheet
+    
+    # Update old timesheet if it exists and is empty
+    if old_timesheet && old_timesheet.id != self.timesheet_id && old_timesheet.time_entries.count == 0
+      old_timesheet.destroy
     end
   end
   
   # Send notification to approvers when a time entry is created
   def send_pending_approval_notification
+    # Only send notifications for time entries that are part of submitted timesheets
+    return unless timesheet && timesheet.pending_approval?
+    
     Mailer.deliver_time_entry_pending_approval(self)
   end
   
@@ -398,5 +427,17 @@ class TimeEntry < ApplicationRecord
   # Send notification to the time entry author when it's rejected
   def send_rejection_notification
     Mailer.deliver_time_entry_rejected(self)
+  end
+  
+  # Returns the hours that were logged in other time entries for the same user and the same day
+  def other_hours_with_same_user_and_day
+    if user_id && spent_on
+      TimeEntry.
+        where(:user_id => user_id, :spent_on => spent_on).
+        where.not(:id => id).
+        sum(:hours).to_f
+    else
+      0.0
+    end
   end
 end

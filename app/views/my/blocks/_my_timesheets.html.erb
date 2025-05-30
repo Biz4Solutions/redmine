@@ -1,0 +1,49 @@
+<%
+  # Find the user's timesheets
+  timesheets = Timesheet.where(user_id: User.current.id).order(start_date: :desc).limit(10)
+%>
+
+<h3>
+  <%= link_to l(:label_my_timesheets), timesheets_path(user_id: 'me') %>
+  (<%= timesheets.count %>)
+</h3>
+
+<% if timesheets.any? %>
+<table class="list timesheets odd-even">
+<thead>
+  <tr>
+    <th><%= l(:field_week) %></th>
+    <th><%= l(:field_date_range) %></th>
+    <th><%= l(:field_hours) %></th>
+    <th><%= l(:field_status) %></th>
+    <th></th>
+  </tr>
+</thead>
+<tbody>
+  <% timesheets.each do |timesheet| %>
+  <tr class="timesheet <%= timesheet.status %>">
+    <td class="week"><%= timesheet.week_number %></td>
+    <td class="date-range"><%= timesheet.date_range %></td>
+    <td class="hours"><%= html_hours(format_hours(timesheet.total_hours)) %></td>
+    <td class="status">
+      <% case timesheet.status %>
+      <% when Timesheet::STATUS_DRAFT %>
+        <span class="badge badge-info"><%= l(:label_draft) %></span>
+      <% when Timesheet::STATUS_PENDING %>
+        <span class="badge badge-warning"><%= l(:label_pending_approval) %></span>
+      <% when Timesheet::STATUS_APPROVED %>
+        <span class="badge badge-success"><%= l(:label_approved) %></span>
+      <% when Timesheet::STATUS_REJECTED %>
+        <span class="badge badge-error"><%= l(:label_rejected) %></span>
+      <% end %>
+    </td>
+    <td class="buttons">
+      <%= link_to l(:button_view), timesheet_path(timesheet), :class => 'icon icon-magnifier' %>
+    </td>
+  </tr>
+  <% end %>
+</tbody>
+</table>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %> 

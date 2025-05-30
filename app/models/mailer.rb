@@ -861,6 +861,49 @@ class Mailer < ActionMailer::Base
     end
   end
 
+  # Builds a mail to notify a user that a timesheet is pending approval
+  def timesheet_pending_approval(user, timesheet)
+    redmine_headers 'Timesheet-Id' => timesheet.id,
+                    'Timesheet-Author' => timesheet.user.login
+    @timesheet = timesheet
+    @user = user
+    @timesheet_url = url_for(:controller => 'timesheets', :action => 'show', :id => timesheet.id)
+    mail :to => user,
+      :subject => "[#{l(:label_timesheet)}] #{l(:mail_subject_timesheet_pending_approval)}: #{timesheet.user.name} (#{timesheet.date_range})"
+  end
+
+  # Builds a mail to notify a user that their timesheet was approved
+  def timesheet_approved(timesheet)
+    redmine_headers 'Timesheet-Id' => timesheet.id,
+                    'Timesheet-Approver' => timesheet.approved_by.login
+    @timesheet = timesheet
+    @user = timesheet.user
+    @timesheet_url = url_for(:controller => 'timesheets', :action => 'show', :id => timesheet.id)
+    mail :to => timesheet.user,
+      :subject => "[#{l(:label_timesheet)}] #{l(:mail_subject_timesheet_approved)}: #{timesheet.date_range}"
+  end
+
+  # Builds a mail to notify a user that their timesheet was rejected
+  def timesheet_rejected(timesheet)
+    redmine_headers 'Timesheet-Id' => timesheet.id,
+                    'Timesheet-Approver' => timesheet.approved_by.login
+    @timesheet = timesheet
+    @user = timesheet.user
+    @timesheet_url = url_for(:controller => 'timesheets', :action => 'show', :id => timesheet.id)
+    mail :to => timesheet.user,
+      :subject => "[#{l(:label_timesheet)}] #{l(:mail_subject_timesheet_rejected)}: #{timesheet.date_range}"
+  end
+
+  # Delivers a timesheet approved notification
+  def self.deliver_timesheet_approved(timesheet)
+    timesheet_approved(timesheet).deliver_later
+  end
+
+  # Delivers a timesheet rejected notification
+  def self.deliver_timesheet_rejected(timesheet)
+    timesheet_rejected(timesheet).deliver_later
+  end
+
   private
 
   # Appends a Redmine header field (name is prepended with 'X-Redmine-')

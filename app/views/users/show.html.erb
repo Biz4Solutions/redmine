@@ -82,7 +82,9 @@
   <tr>
     <th><%=l(:label_project)%></th>
     <th><%=l(:label_role_plural)%></th>
-    <th><%=l(:label_registered_on)%></th>
+    <th><%=l(:field_allocation_percentage)%></th>
+    <th><%=l(:field_start_date)%></th>
+    <th><%=l(:field_end_date)%></th>
   </tr>
 </thead>
 <tbody>
@@ -92,7 +94,9 @@
   <tr class="<%= project.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
     <td class="name"><span><%= link_to_project(project) %></span></td>
     <td class="roles"><%= membership.roles.sort.collect(&:to_s).join(', ') %></td>
-    <td><%= format_date(membership.created_on) %></td>
+    <td class="allocation"><%= membership.allocation_percentage %>%</td>
+    <td class="start-date"><%= format_date(membership.start_date) %></td>
+    <td class="end-date"><%= format_date(membership.end_date) %></td>
   </tr>
 <% end %>
 </tbody>

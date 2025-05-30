@@ -419,6 +419,26 @@ Rails.application.routes.draw do
   get 'help/wiki_syntax/(:type)', :controller => 'help', :action => 'show_wiki_syntax', :constraints => { :type => /detailed/ }, :as => 'help_wiki_syntax'
   get 'help/code_highlighting', :controller => 'help', :action => 'show_code_highlighting',  :as => 'help_code_highlighting'
 
+  # Timesheets
+  resources :timesheets do
+    member do
+      post 'submit'
+    end
+
+    collection do
+      post 'bulk_submit'
+      post 'bulk_approve'
+      post 'bulk_reject'
+      get 'pending_approval'
+    end
+  end
+
+  resources :members do
+    collection do
+      get 'max_availability/:user_id', to: 'members#max_availability'
+    end
+  end
+
   Redmine::Plugin.directory.glob("*/config/routes.rb").sort.each do |plugin_routes_path|
     instance_eval(plugin_routes_path.read, plugin_routes_path.to_s)
   rescue SyntaxError, StandardError => e
