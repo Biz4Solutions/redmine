@@ -52,21 +52,21 @@ module MembersHelper
     principals.collect do |principal|
       if principal.is_a?(User)
         total_allocation = Member.total_allocation_for_user(principal.id)
-        max_availability = 100 - total_allocation
+        max_availability = [100 - total_allocation, 0].max
         content_tag(
           'label',
           radio_button_tag(name, principal.id, false,
             :onchange => "updateMaxAvailability(#{principal.id})") +
           content_tag('span', "#{principal.name} (#{max_availability}%)",
             :style => 'white-space: nowrap;'),
-          :class => 'block'
+          :class => 'inline-flex'
         )
       else
         content_tag(
           'label',
           radio_button_tag(name, principal.id, false) +
           principal.name,
-          :class => 'block'
+          :class => 'inline-flex'
         )
       end
     end.join("\n").html_safe

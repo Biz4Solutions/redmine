@@ -2163,3 +2163,10 @@ th[role=columnheader]:not(.no-sort):hover:after {
 	display: inline;
 	opacity: 1;
 }
+
+/* Override column width for members view */
+#principals_for_new_member .objects-selection #principals {
+  column-width: 225px !important;
+  -webkit-column-width: 225px !important;
+  -moz-column-width: 225px !important;
+}

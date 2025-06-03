@@ -76,31 +76,81 @@
 </table>
 
 <% unless @memberships.empty? %>
-<h3><%=l(:label_project_plural)%></h3>
-<table class="list projects">
-<thead>
-  <tr>
-    <th><%=l(:label_project)%></th>
-    <th><%=l(:label_role_plural)%></th>
-    <th><%=l(:field_allocation_percentage)%></th>
-    <th><%=l(:field_start_date)%></th>
-    <th><%=l(:field_end_date)%></th>
-  </tr>
-</thead>
-<tbody>
-<% memberships_by_project = @memberships.group_by(&:project) %>
-<% project_tree(memberships_by_project.keys, :init_level => true) do |project, level| %>
-  <% membership = memberships_by_project[project].first %>
-  <tr class="<%= project.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
-    <td class="name"><span><%= link_to_project(project) %></span></td>
-    <td class="roles"><%= membership.roles.sort.collect(&:to_s).join(', ') %></td>
-    <td class="allocation"><%= membership.allocation_percentage %>%</td>
-    <td class="start-date"><%= format_date(membership.start_date) %></td>
-    <td class="end-date"><%= format_date(membership.end_date) %></td>
-  </tr>
-<% end %>
-</tbody>
-</table>
+  <h3><%=l(:label_project_plural)%></h3>
+  
+  <% active_memberships = @memberships.select { |m| m.end_date.nil? || m.end_date >= Date.today } %>
+  <% past_memberships = @memberships.select { |m| m.end_date && m.end_date < Date.today } %>
+  
+  <div class="allocations-container">
+    <div class="allocations-tabs">
+      <div class="tab-header">
+        <div class="tab-button active" data-tab="active-allocations">
+          <%= l(:label_active_allocations) %>
+        </div>
+        <div class="tab-button" data-tab="past-allocations">
+          <%= l(:label_past_allocations) %>
+        </div>
+      </div>
+      
+      <div class="tab-content active" id="active-allocations">
+        <% if active_memberships.any? %>
+          <% total_allocation = active_memberships.sum(&:allocation_percentage) %>
+          <div class="total-allocation">
+            <%= l(:label_total_allocation) %>: <strong><%= total_allocation %>%</strong>
+          </div>
+          <div class="allocations-table">
+            <div class="table-header">
+              <div class="col project"><%=l(:label_project)%></div>
+              <div class="col roles"><%=l(:label_role_plural)%></div>
+              <div class="col allocation"><%=l(:field_allocation_percentage)%></div>
+              <div class="col dates"><%=l(:field_start_date)%></div>
+              <div class="col dates"><%=l(:field_end_date)%></div>
+            </div>
+            <% memberships_by_project = active_memberships.group_by(&:project) %>
+            <% project_tree(memberships_by_project.keys, :init_level => true) do |project, level| %>
+              <% membership = memberships_by_project[project].first %>
+              <div class="table-row <%= project.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
+                <div class="col project"><%= link_to_project(project) %></div>
+                <div class="col roles"><%= membership.roles.sort.collect(&:to_s).join(', ') %></div>
+                <div class="col allocation"><%= membership.allocation_percentage %>%</div>
+                <div class="col dates"><%= format_date(membership.start_date) %></div>
+                <div class="col dates"><%= format_date(membership.end_date) %></div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="nodata"><%= l(:label_no_data) %></p>
+        <% end %>
+      </div>
+      
+      <div class="tab-content" id="past-allocations">
+        <% if past_memberships.any? %>
+          <div class="allocations-table">
+            <div class="table-header">
+              <div class="col project"><%=l(:label_project)%></div>
+              <div class="col roles"><%=l(:label_role_plural)%></div>
+              <div class="col allocation"><%=l(:field_allocation_percentage)%></div>
+              <div class="col dates"><%=l(:field_start_date)%></div>
+              <div class="col dates"><%=l(:field_end_date)%></div>
+            </div>
+            <% memberships_by_project = past_memberships.group_by(&:project) %>
+            <% project_tree(memberships_by_project.keys, :init_level => true) do |project, level| %>
+              <% membership = memberships_by_project[project].first %>
+              <div class="table-row <%= project.css_classes %> <%= level > 0 ? "idnt idnt-#{level}" : nil %>">
+                <div class="col project"><%= link_to_project(project) %></div>
+                <div class="col roles"><%= membership.roles.sort.collect(&:to_s).join(', ') %></div>
+                <div class="col allocation"><%= membership.allocation_percentage %>%</div>
+                <div class="col dates"><%= format_date(membership.start_date) %></div>
+                <div class="col dates"><%= format_date(membership.end_date) %></div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="nodata"><%= l(:label_no_data) %></p>
+        <% end %>
+      </div>
+    </div>
+  </div>
 <% end %>
 
 <% if (User.current == @user || User.current.admin?) && @user.groups.any? %>
@@ -131,6 +181,107 @@
 
 <% content_for :header_tags do %>
   <%= auto_discovery_link_tag(:atom, :controller => 'activities', :action => 'index', :user_id => @user, :format => :atom, :key => User.current.atom_key) %>
+  <%= stylesheet_link_tag 'application', :plugin => 'redmine' %>
+  <%= javascript_tag do %>
+    $(document).ready(function() {
+      $('.tab-button').click(function() {
+        var tabId = $(this).data('tab');
+        $('.tab-button').removeClass('active');
+        $(this).addClass('active');
+        $('.tab-content').removeClass('active');
+        $('#' + tabId).addClass('active');
+      });
+    });
+  <% end %>
+  <style>
+    .allocations-container {
+      margin: 1em 0;
+    }
+    .allocations-tabs {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .tab-header {
+      display: flex;
+      border-bottom: 1px solid #ccc;
+      background: #f8f8f8;
+    }
+    .tab-button {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-right: 1px solid #ccc;
+      color: #666;
+    }
+    .tab-button:last-child {
+      border-right: none;
+    }
+    .tab-button.active {
+      background: #fff;
+      color: #333;
+      border-bottom: 2px solid #1a73e8;
+      margin-bottom: -1px;
+    }
+    .tab-content {
+      display: none;
+      padding: 15px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .allocations-table {
+      width: 100%;
+    }
+    .table-header {
+      display: flex;
+      background: #f8f8f8;
+      border-bottom: 2px solid #ccc;
+      font-weight: bold;
+    }
+    .table-row {
+      display: flex;
+      border-bottom: 1px solid #eee;
+      padding: 8px 0;
+    }
+    .table-row:hover {
+      background: #f5f5f5;
+    }
+    .col {
+      padding: 0 10px;
+    }
+    .col.project {
+      flex: 2;
+    }
+    .col.roles {
+      flex: 2;
+    }
+    .col.allocation {
+      flex: 1;
+      text-align: center;
+    }
+    .col.dates {
+      flex: 1;
+      text-align: center;
+    }
+    .idnt {
+      padding-left: 20px;
+    }
+    .nodata {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    .total-allocation {
+      margin-bottom: 15px;
+      padding: 10px;
+      background: #f8f8f8;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1.1em;
+    }
+    .total-allocation strong {
+      color: #1a73e8;
+    }
+  </style>
 <% end %>
 <% end %>
 <%= call_hook :view_account_right_bottom, :user => @user %>

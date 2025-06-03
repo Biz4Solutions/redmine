@@ -41,7 +41,12 @@ api.user do
             end
           end
         end
-      end if membership.project
+        api.allocation_percentage membership.allocation_percentage
+        api.start_date membership.start_date
+        api.end_date membership.end_date
+        api.active membership.active?
+        api.expired membership.expired?
+      end if membership.project && !membership.expired? && membership.allocation_percentage > 0
     end
   end if include_in_api_response?('memberships') && @memberships
 end

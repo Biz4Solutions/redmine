@@ -28,7 +28,7 @@ class Member < ApplicationRecord
   validates_uniqueness_of :user_id, :scope => :project_id, :case_sensitive => true
   validate :validate_role
   validate :validate_allocation_percentage
-  
+
   before_save :set_default_dates
   before_destroy :set_issue_category_nil, :remove_from_project_default_assigned_to
 
@@ -215,12 +215,12 @@ class Member < ApplicationRecord
       project_ids.each do |project_id|
         member = Member.find_or_initialize_by(:project_id => project_id, :user_id => principal.id)
         member.role_ids |= role_ids
-        
+
         # Set allocation fields
         member.allocation_percentage = attributes[:allocation_percentage] if attributes[:allocation_percentage].present?
         member.start_date = attributes[:start_date] if attributes[:start_date].present?
         member.end_date = attributes[:end_date] if attributes[:end_date].present?
-        
+
         # Save the member but don't raise an exception if it fails
         # This allows us to collect all errors
         member.save
@@ -233,27 +233,30 @@ class Member < ApplicationRecord
   # Returns true if the member is active on the given date
   def active_on?(date=Date.today)
     return false unless principal.active?
+
     (start_date.nil? || start_date <= date) && (end_date.nil? || end_date >= date)
   end
-  
+
   # Returns true if the member is currently active
   def active?
     active_on?(Date.today)
   end
-  
+
   # Returns true if the member has expired (end_date is in the past)
   def expired?
     end_date.present? && end_date < Date.today
   end
-  
+
   # Returns the total allocation percentage for a user across all active projects
   def self.total_allocation_for_user(user_id, date=Date.today)
-    where(user_id: user_id)
-      .where("(start_date IS NULL OR start_date <= ?)", date)
-      .where("(end_date IS NULL OR end_date >= ?)", date)
+    joins(:principal)
+      .where(user_id: user_id)
+      .where(users: { status: Principal::STATUS_ACTIVE })  # Only include active users
+      .where("(end_date IS NULL OR end_date >= ?)", date)  # Only check end date
+      .where("allocation_percentage > 0")  # Exclude deactivated memberships
       .sum(:allocation_percentage) || 0
   end
-  
+
   # Deactivate expired memberships
   def self.deactivate_expired
     where("end_date < ?", Date.today).find_each do |member|
@@ -271,43 +274,43 @@ class Member < ApplicationRecord
 
   def validate_allocation_percentage
     return if allocation_percentage.nil?
-    
+
     if allocation_percentage <= 0 || allocation_percentage > 100
       errors.add(:allocation_percentage, :invalid_range, message: "must be between 0 and 100")
       return
     end
-    
+
     # Skip validation if user_id is not set yet (happens during initial form submission)
     return if user_id.nil?
-    
+
     # Calculate total allocation for this user including this record
     date = Date.today
-    
+
     # Get all active allocations for this user except this one
     other_allocations = self.class.where(user_id: user_id)
                             .where("(start_date IS NULL OR start_date <= ?)", date)
                             .where("(end_date IS NULL OR end_date >= ?)", date)
-    
+
     # Exclude this record if it's being updated
     other_allocations = other_allocations.where.not(id: id) unless new_record?
-    
+
     # Sum up other allocations
     total_other_allocations = other_allocations.sum(:allocation_percentage) || 0
-    
+
     # Add the new allocation percentage
     total = total_other_allocations + allocation_percentage
-    
+
     if total > 100
-      errors.add(:allocation_percentage, :exceeds_total, 
+      errors.add(:allocation_percentage, :exceeds_total,
                 message: "would exceed 100% total allocation for this user (total would be #{total}%)")
     end
   end
-  
+
   def set_default_dates
     if start_date.nil? && project.present?
       self.start_date = project.start_date
     end
-    
+
     if end_date.nil? && project.present?
       self.end_date = project.due_date
     end

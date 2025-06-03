@@ -1,0 +1,5 @@
+#principals_for_new_member .objects-selection .principals label.inline-flex {
+  column-width: 225px !important;
+  -webkit-column-width: 225px !important;
+  -moz-column-width: 225px !important;
+} 
