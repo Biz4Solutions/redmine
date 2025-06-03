@@ -142,6 +142,12 @@ zh:
         must_contain_special_chars: "必须包含特殊字符 (!, $, %, ...)"
         domain_not_allowed: "contains a domain not allowed (%{domain})"
         too_simple: "is too simple"
+    models:
+      timesheet:
+        attributes:
+          base:
+            overlapping_timesheet: "此日期范围已存在工时表"
+            timesheet_must_be_one_week: "工时表必须正好覆盖一周"
 
   actionview_instancetag_blank_option: 请选择
 
@@ -1174,7 +1180,7 @@ zh:
   label_no_preview: 没有可以显示的预览内容
   error_no_tracker_allowed_for_new_issue_in_project: 项目没有任何跟踪标签，您不能创建一个问题
   label_tracker_all: 所有跟踪标签
-  label_new_project_issue_tab_enabled: 显示“新建问题”标签
+  label_new_project_issue_tab_enabled: 显示"新建问题"标签
   setting_new_item_menu_tab: 建立新对象条目的项目菜单栏目
   label_new_object_tab_enabled: 显示 "+" 为下拉列表
   error_no_projects_with_tracker_allowed_for_new_issue: 当前项目中不包含对应的跟踪类型，不能创建该类型的工作项。
@@ -1363,8 +1369,8 @@ zh:
   error_no_data_in_file: 文件不包含任何数据
   field_twofa_required: 要求双因素身份验证
   twofa_hint_optional_html: 设置 <strong>%{label}</strong>，用户可以自行设置双因素身份验证，除非其所在组要求必须设置。
-  twofa_text_group_required: 仅当全局双因素身份验证设置为“选用项”时，此设置才有效。目前，所有用户都需要进行双因素身份验证。
-  twofa_text_group_disabled: 仅当全局双因素身份验证设置为“选用项”时，此设置才有效。目前，双因素身份验证已禁用。
+  twofa_text_group_required: 仅当全局双因素身份验证设置为"选用项"时，此设置才有效。目前，所有用户都需要进行双因素身份验证。
+  twofa_text_group_disabled: 仅当全局双因素身份验证设置为"选用项"时，此设置才有效。目前，双因素身份验证已禁用。
   field_default_issue_query: 默认问题查询
   label_default_queries:
     for_all_projects: 对于所有项目

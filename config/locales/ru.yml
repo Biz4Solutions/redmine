@@ -216,6 +216,13 @@ ru:
         domain_not_allowed: "содержит запрещенный домен (%{domain})"
         too_simple: "is too simple"
 
+      models:
+        timesheet:
+          attributes:
+            base:
+              overlapping_timesheet: "Уже существует табель для этого диапазона дат"
+              timesheet_must_be_one_week: "Табель должен охватывать ровно одну неделю"
+
   support:
     array:
       # Rails 2.2

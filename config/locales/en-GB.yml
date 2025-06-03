@@ -142,6 +142,12 @@ en-GB:
         must_contain_special_chars: "must contain special characters (!, $, %, ...)"
         domain_not_allowed: "contains a domain not allowed (%{domain})"
         too_simple: "is too simple"
+    models:
+      timesheet:
+        attributes:
+          base:
+            overlapping_timesheet: "A timesheet already exists for this date range"
+            timesheet_must_be_one_week: "Timesheet must cover exactly one week"
 
   actionview_instancetag_blank_option: Please select
 
@@ -1386,9 +1392,8 @@ en-GB:
   permission_delete_project: Delete the project
   field_twofa_scheme: Two-factor authentication scheme
   text_user_destroy_confirmation: Are you sure you want to delete this user and remove
-    all references to them? This cannot be undone. Often, locking a user instead of
-    deleting them is the better solution. To confirm, please enter their login (%{login})
-    below.
+    all references to them? This cannot be undone. Often, locking a user instead of deleting
+    them is the better solution. To confirm, please enter their login (%{login}) below.
   text_project_destroy_enter_identifier: To confirm, please enter the project's identifier
     (%{identifier}) below.
   button_add_subtask: Add subtask

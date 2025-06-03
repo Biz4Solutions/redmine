@@ -144,6 +144,11 @@ en:
             allocation_percentage:
               invalid_range: must be between 0 and 100
               exceeds_total: would exceed 100% total allocation for this user
+        timesheet:
+          attributes:
+            base:
+              overlapping_timesheet: "A timesheet already exists for this date range"
+              timesheet_must_be_one_week: "Timesheet must cover exactly one week"
 
   actionview_instancetag_blank_option: Please select
 

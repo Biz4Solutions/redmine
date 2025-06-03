@@ -222,42 +222,6 @@ class TimeEntry < ApplicationRecord
       errors.add :base, I18n.t(:error_user_not_allocated_to_project)
       return
     end
-    
-    # Check if the spent_on date is within the member's allocation period
-    unless member.active_on?(spent_on)
-      if member.start_date && spent_on < member.start_date
-        errors.add :spent_on, I18n.t(:error_spent_on_before_allocation_start, 
-                                     :start_date => format_date(member.start_date))
-      elsif member.end_date && spent_on > member.end_date
-        errors.add :spent_on, I18n.t(:error_spent_on_after_allocation_end, 
-                                     :end_date => format_date(member.end_date))
-      else
-        errors.add :spent_on, I18n.t(:error_user_not_allocated_to_project_on_date)
-      end
-      return
-    end
-    
-    # Check if the hours exceed the user's allocation percentage
-    if member.allocation_percentage < 100
-      # Calculate the maximum hours allowed per day based on allocation percentage
-      # Assuming 8-hour workday as standard
-      max_hours_per_day = 8.0 * (member.allocation_percentage / 100.0)
-      
-      # Get all time entries for this user on this date
-      total_hours_on_date = TimeEntry.where(
-        user_id: user_id, 
-        spent_on: spent_on
-      ).where.not(id: id).sum(:hours).to_f
-      
-      # Add the current hours
-      total_hours_on_date += hours.to_f
-      
-      if total_hours_on_date > max_hours_per_day
-        errors.add :hours, I18n.t(:error_exceeds_allocation_percentage, 
-                                  :max_hours => format_hours(max_hours_per_day),
-                                  :allocation => member.allocation_percentage)
-      end
-    end
   end
 
   def hours=(h)
