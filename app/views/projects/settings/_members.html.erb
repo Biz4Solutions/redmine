@@ -14,6 +14,7 @@
       <th><%= l(:field_allocation_percentage) %></th>
       <th><%= l(:field_start_date) %></th>
       <th><%= l(:field_end_date) %></th>
+      <th><%= l(:field_billable) %></th>
       <th></th>
       <%= call_hook(:view_projects_settings_members_table_header, :project => @project) %>
     </tr>
@@ -46,6 +47,9 @@
   </td>
   <td class="end-date">
     <%= format_date(member.end_date) %>
+  </td>
+  <td class="billable">
+    <%= member.billable ? l(:general_text_yes) : l(:general_text_no) %>
   </td>
   <td class="buttons">
       <%= link_to sprite_icon('edit', l(:button_edit)),

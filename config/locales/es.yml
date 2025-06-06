@@ -1569,3 +1569,7 @@ es:
     zero: "%{filename}"
     one: "%{filename} and 1 file"
     other: "%{filename} and %{count} files"
+  field_allocation_percentage: "Porcentaje de asignación"
+  field_start_date: "Fecha de inicio"
+  field_end_date: "Fecha de fin"
+  field_billable: "Facturable"

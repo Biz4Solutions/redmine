@@ -16,6 +16,7 @@ api.array :memberships, api_meta(:total_count => @member_count, :offset => @offs
       api.allocation_percentage membership.allocation_percentage
       api.start_date membership.start_date
       api.end_date membership.end_date
+      api.billable membership.billable
       api.active membership.active?
     end
   end

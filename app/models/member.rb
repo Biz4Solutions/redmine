@@ -220,6 +220,7 @@ class Member < ApplicationRecord
         member.allocation_percentage = attributes[:allocation_percentage] if attributes[:allocation_percentage].present?
         member.start_date = attributes[:start_date] if attributes[:start_date].present?
         member.end_date = attributes[:end_date] if attributes[:end_date].present?
+        member.billable = attributes[:billable] if attributes[:billable].present?
 
         # Save the member but don't raise an exception if it fails
         # This allows us to collect all errors

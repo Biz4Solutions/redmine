@@ -1442,6 +1442,7 @@ en:
   field_total_allocation: "Total allocation"
   field_start_date: "Start date"
   field_end_date: "End date"
+  field_billable: "Billable"
   label_allocation: "Allocation"
   
   error_user_not_allocated_to_project: "User is not allocated to this project"

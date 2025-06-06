@@ -41,39 +41,39 @@ fr:
       half_a_minute: "30 secondes"
       less_than_x_seconds:
         zero:  "moins d'une seconde"
-        one:   "moins d'une seconde"
-        other: "moins de %{count} secondes"
+        one:   "moins d'une seconde"
+        other: "moins de %{count} secondes"
       x_seconds:
-        one:   "1 seconde"
-        other: "%{count} secondes"
+        one:   "1 seconde"
+        other: "%{count} secondes"
       less_than_x_minutes:
         zero:  "moins d'une minute"
-        one:   "moins d'une minute"
-        other: "moins de %{count} minutes"
+        one:   "moins d'une minute"
+        other: "moins de %{count} minutes"
       x_minutes:
-        one:   "1 minute"
-        other: "%{count} minutes"
+        one:   "1 minute"
+        other: "%{count} minutes"
       about_x_hours:
         one:   "environ une heure"
-        other: "environ %{count} heures"
+        other: "environ %{count} heures"
       x_hours:
         one:   "une heure"
-        other: "%{count} heures"
+        other: "%{count} heures"
       x_days:
-        one:   "un jour"
-        other: "%{count} jours"
+        one:   "un jour"
+        other: "%{count} jours"
       about_x_months:
         one:   "environ un mois"
-        other: "environ %{count} mois"
+        other: "environ %{count} mois"
       x_months:
-        one:   "un mois"
-        other: "%{count} mois"
+        one:   "un mois"
+        other: "%{count} mois"
       about_x_years:
         one:   "environ un an"
-        other: "environ %{count} ans"
+        other: "environ %{count} ans"
       over_x_years:
         one:   "plus d'un an"
-        other: "plus de %{count} ans"
+        other: "plus de %{count} ans"
       almost_x_years:
         one:   "presqu'un an"
         other: "presque %{count} ans"
@@ -94,7 +94,7 @@ fr:
       format:
         unit: '€'
         precision: 2
-        format: '%n %u'
+        format: '%n %u'
     human:
       format:
         precision: 3
@@ -123,7 +123,7 @@ fr:
         header:
           one: "Impossible d'enregistrer %{model} : une erreur"
           other: "Impossible d'enregistrer %{model} : %{count} erreurs."
-        body: "Veuillez vérifier les champs suivants :"
+        body: "Veuillez vérifier les champs suivants :"
       messages:
         inclusion: "n'est pas inclus(e) dans la liste"
         exclusion: "n'est pas disponible"
@@ -392,6 +392,10 @@ fr:
   field_digest: Checksum
   field_default_assigned_to: Assigné par défaut
   field_default_issue_query: Rapport par défaut
+  field_allocation_percentage: "Pourcentage d'allocation"
+  field_start_date: "Date de début"
+  field_end_date: "Date de fin"
+  field_billable: "Facturable"
 
   setting_app_title: Titre de l'application
   setting_welcome_text: Texte d'accueil

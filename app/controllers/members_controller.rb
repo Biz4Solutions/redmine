@@ -65,6 +65,7 @@ class MembersController < ApplicationController
         member.allocation_percentage = params[:membership][:allocation_percentage]
         member.start_date = params[:membership][:start_date]
         member.end_date = params[:membership][:end_date]
+        member.billable = params[:membership].has_key?(:billable) ? params[:membership][:billable] == '1' : false
 
         members << member
       end
@@ -124,6 +125,7 @@ class MembersController < ApplicationController
       @member.allocation_percentage = params[:membership][:allocation_percentage] if params[:membership][:allocation_percentage]
       @member.start_date = params[:membership][:start_date] if params[:membership][:start_date]
       @member.end_date = params[:membership][:end_date] if params[:membership][:end_date]
+      @member.billable = params[:membership].has_key?(:billable) ? params[:membership][:billable] == '1' : false
     end
     saved = @member.save
     respond_to do |format|

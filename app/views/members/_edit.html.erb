@@ -29,6 +29,10 @@
       <%= label_tag 'membership[end_date]', l(:field_end_date) %>
       <%= date_field_tag 'membership[end_date]', @member.end_date %>
     </p>
+    <p>
+      <%= label_tag 'membership[billable]', l(:field_billable) %>
+      <%= check_box_tag 'membership[billable]', '1', @member.billable %>
+    </p>
   </fieldset>
   
   <p>

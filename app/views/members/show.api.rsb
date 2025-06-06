@@ -14,5 +14,6 @@ api.membership do
   api.allocation_percentage @member.allocation_percentage
   api.start_date @member.start_date
   api.end_date @member.end_date
+  api.billable @member.billable
   api.active @member.active?
 end

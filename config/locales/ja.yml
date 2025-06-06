@@ -1449,3 +1449,7 @@ ja:
   label_attachment_summary:
     zero: "%{filename}"
     other: "%{filename} ほか%{count}件"
+  field_allocation_percentage: "割り当て率"
+  field_start_date: "開始日"
+  field_end_date: "終了日"
+  field_billable: "請求対象"
