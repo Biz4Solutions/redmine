@@ -13,6 +13,7 @@
 /config/secrets.yml
 /config/initializers/session_store.rb
 /config/initializers/secret_token.rb
+/config/credentials.yml.enc
 /coverage
 /db/*.db
 /db/*.sqlite3
