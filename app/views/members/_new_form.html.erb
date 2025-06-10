@@ -25,11 +25,11 @@
   </p>
   <p>
     <%= label_tag 'membership[start_date]', l(:field_start_date) %>
-    <%= date_field_tag 'membership[start_date]', @project.start_date %>
+    <%= date_field_tag 'membership[start_date]', Date.today %>
   </p>
   <p>
     <%= label_tag 'membership[end_date]', l(:field_end_date) %>
-    <%= date_field_tag 'membership[end_date]', @project.due_date %>
+    <%= date_field_tag 'membership[end_date]', 3.months.from_now.to_date %>
   </p>
   <p>
     <%= label_tag 'membership[billable]', l(:field_billable) %>
@@ -50,7 +50,7 @@ function updateMaxAvailability(userId) {
   fetch('/members/max_availability/' + userId)
     .then(response => response.json())
     .then(data => {
-      var maxAvailability = 100 - data.total_allocation;
+      var maxAvailability = data.max_availability;
       var maxHours = (8.0 * maxAvailability / 100.0).toFixed(2);
       document.getElementById('max_availability_display').textContent = 
         '(' + maxAvailability + '%, ' + maxHours + ' hours)';

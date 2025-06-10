@@ -1584,3 +1584,9 @@ en:
   label_project_plural: "Projects"
   label_active_allocations: "Active Allocations"
   label_past_allocations: "Past Allocations"
+
+  label_bench_project: "Bench Project"
+  label_regular_allocation: "Regular Allocation"
+  label_bench_allocation: "Bench Allocation"
+  label_available_allocation: "Available Allocation"
+  text_bench_project_info: "If checked, allocations to this project will not count against resource availability and may be automatically reduced if total allocation exceeds 100%"

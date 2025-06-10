@@ -27,9 +27,9 @@
     <span class="icon">
       <%= principal_icon(member.principal) %>
       <% if member.principal.is_a?(User) %>
-        <% total_allocation = Member.total_allocation_for_user(member.principal.id) %>
-        <% max_availability = [100 - total_allocation, 0].max %>
-        <%= link_to_user member.principal %> (Max Availability - <%= max_availability %>%)
+        <% regular_allocation = Member.regular_allocation_for_user(member.principal.id) %>
+        <% max_availability = [100 - regular_allocation, 0].max %>
+        <%= link_to_user member.principal %>&nbsp;(Max Availability - <%= max_availability %>%)
       <% else %>
         <%= link_to_user member.principal %>
       <% end %>

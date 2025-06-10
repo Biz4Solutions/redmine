@@ -28,6 +28,7 @@ class Member < ApplicationRecord
   validates_uniqueness_of :user_id, :scope => :project_id, :case_sensitive => true
   validate :validate_role
   validate :validate_allocation_percentage
+  validate :validate_dates
 
   before_save :set_default_dates
   before_destroy :set_issue_category_nil, :remove_from_project_default_assigned_to
@@ -258,6 +259,34 @@ class Member < ApplicationRecord
       .sum(:allocation_percentage) || 0
   end
 
+  # Returns the total allocation percentage for a user across all active non-bench projects
+  def self.regular_allocation_for_user(user_id, date=Date.today)
+    joins(:principal, :project)
+      .where(user_id: user_id)
+      .where(users: { status: Principal::STATUS_ACTIVE })
+      .where("(end_date IS NULL OR end_date >= ?)", date)
+      .where("allocation_percentage > 0")
+      .where(projects: { bench_project: false })
+      .sum(:allocation_percentage) || 0
+  end
+
+  # Returns the total allocation percentage for a user across all active bench projects
+  def self.bench_allocation_for_user(user_id, date=Date.today)
+    joins(:principal, :project)
+      .where(user_id: user_id)
+      .where(users: { status: Principal::STATUS_ACTIVE })
+      .where("(end_date IS NULL OR end_date >= ?)", date)
+      .where("allocation_percentage > 0")
+      .where(projects: { bench_project: true })
+      .sum(:allocation_percentage) || 0
+  end
+
+  # Returns the available allocation percentage for a user
+  def self.available_allocation_for_user(user_id, date=Date.today)
+    regular_allocation = regular_allocation_for_user(user_id, date)
+    [100 - regular_allocation, 0].max
+  end
+
   # Deactivate expired memberships
   def self.deactivate_expired
     where("end_date < ?", Date.today).find_each do |member|
@@ -271,6 +300,12 @@ class Member < ApplicationRecord
 
   def validate_role
     errors.add(:role, :empty) if member_roles.empty? && roles.empty?
+  end
+
+  def validate_dates
+    if start_date.present? && end_date.present? && end_date < start_date
+      errors.add(:end_date, :must_be_after_start_date)
+    end
   end
 
   def validate_allocation_percentage
@@ -302,18 +337,76 @@ class Member < ApplicationRecord
     total = total_other_allocations + allocation_percentage
 
     if total > 100
-      errors.add(:allocation_percentage, :exceeds_total,
-                message: "would exceed 100% total allocation for this user (total would be #{total}%)")
+      # If this is a bench project, we need to reduce bench project allocations
+      if project.bench_project
+        # Get all bench project allocations for this user
+        bench_allocations = other_allocations.joins(:project)
+                                          .where(projects: { bench_project: true })
+                                          .order(:allocation_percentage)
+
+        # Calculate how much we need to reduce
+        excess = total - 100
+
+        # Reduce bench project allocations starting from the lowest percentage
+        remaining_reduction = excess
+        bench_allocations.each do |allocation|
+          if remaining_reduction <= 0
+            break
+          end
+
+          if allocation.allocation_percentage <= remaining_reduction
+            # Reduce this allocation to 0
+            allocation.update_column(:allocation_percentage, 0)
+            remaining_reduction -= allocation.allocation_percentage
+          else
+            # Reduce this allocation by the remaining amount
+            allocation.update_column(:allocation_percentage, allocation.allocation_percentage - remaining_reduction)
+            remaining_reduction = 0
+          end
+        end
+      else
+        # For non-bench projects, check if we can reduce bench allocations to accommodate this
+        bench_allocations = other_allocations.joins(:project)
+                                          .where(projects: { bench_project: true })
+                                          .order(:allocation_percentage)
+
+        # Calculate how much we need to reduce from bench allocations
+        excess = total - 100
+
+        # Try to reduce bench allocations
+        remaining_reduction = excess
+        bench_allocations.each do |allocation|
+          if remaining_reduction <= 0
+            break
+          end
+
+          if allocation.allocation_percentage <= remaining_reduction
+            # Reduce this allocation to 0
+            allocation.update_column(:allocation_percentage, 0)
+            remaining_reduction -= allocation.allocation_percentage
+          else
+            # Reduce this allocation by the remaining amount
+            allocation.update_column(:allocation_percentage, allocation.allocation_percentage - remaining_reduction)
+            remaining_reduction = 0
+          end
+        end
+
+        # If we still have excess after reducing all bench allocations, show error
+        if remaining_reduction > 0
+          errors.add(:allocation_percentage, :exceeds_total,
+                    message: "would exceed 100% total allocation for this user (total would be #{total}%)")
+        end
+      end
     end
   end
 
   def set_default_dates
-    if start_date.nil? && project.present?
-      self.start_date = project.start_date
+    if start_date.nil?
+      self.start_date = Date.today
     end
 
-    if end_date.nil? && project.present?
-      self.end_date = project.due_date
+    if end_date.nil?
+      self.end_date = 3.months.from_now.to_date
     end
   end
 end

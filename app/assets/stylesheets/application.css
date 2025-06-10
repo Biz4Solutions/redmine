@@ -2166,7 +2166,7 @@ th[role=columnheader]:not(.no-sort):hover:after {
 
 /* Override column width for members view */
 #principals_for_new_member .objects-selection #principals {
-  column-width: 225px !important;
-  -webkit-column-width: 225px !important;
-  -moz-column-width: 225px !important;
+  column-width: 275px !important;
+  -webkit-column-width: 275px !important;
+  -moz-column-width: 275px !important;
 }

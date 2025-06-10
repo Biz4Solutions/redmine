@@ -34,10 +34,13 @@
     <%= textilizable @project.description %>
   </div>
   <% end %>
-  <% if @project.homepage.present? || @project.visible_custom_field_values.any? { |o| o.value.present? } %>
+  <% if @project.homepage.present? || @project.visible_custom_field_values.any? { |o| o.value.present? } || @project.bench_project? %>
   <ul>
   <% unless @project.homepage.blank? %>
     <li><span class="label"><%=l(:field_homepage)%>:</span> <%= link_to_if uri_with_safe_scheme?(@project.homepage), @project.homepage, @project.homepage %></li>
+  <% end %>
+  <% if @project.bench_project? %>
+    <li><span class="label"><%= l(:label_bench_project) %>:</span> <%= l(:general_text_yes) %></li>
   <% end %>
   <% render_custom_field_values(@project) do |custom_field, formatted| %>
     <li class="<%= custom_field.css_classes %>"><span class="label"><%= custom_field.name %>:</span> <%= formatted %></li>

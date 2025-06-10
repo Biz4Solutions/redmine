@@ -25,6 +25,8 @@ class MembersController < ApplicationController
   before_action :authorize
   accept_api_auth :index, :show, :create, :update, :destroy
 
+  include MembersHelper
+
   require_sudo_mode :create, :update, :destroy
 
   def index
@@ -175,9 +177,10 @@ class MembersController < ApplicationController
 
   def max_availability
     user = User.find(params[:user_id])
-    total_allocation = Member.total_allocation_for_user(user.id)
+    regular_allocation = Member.regular_allocation_for_user(user.id)
+    max_availability = [100 - regular_allocation, 0].max
 
-    render json: { total_allocation: total_allocation }
+    render json: { max_availability: max_availability }
   end
 
   private

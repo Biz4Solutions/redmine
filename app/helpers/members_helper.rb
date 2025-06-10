@@ -52,12 +52,14 @@ module MembersHelper
     principals.collect do |principal|
       if principal.is_a?(User)
         total_allocation = Member.total_allocation_for_user(principal.id)
-        max_availability = [100 - total_allocation, 0].max
+        bench_allocation = Member.bench_allocation_for_user(principal.id)
+        regular_allocation = total_allocation - bench_allocation
+        available_allocation = [100 - regular_allocation, 0].max
         content_tag(
           'label',
           radio_button_tag(name, principal.id, false,
             :onchange => "updateMaxAvailability(#{principal.id})") +
-          content_tag('span', "#{principal.name} (#{max_availability}%)",
+          content_tag('span', "#{principal.name} (#{available_allocation}%)",
             :style => 'white-space: nowrap;'),
           :class => 'inline-flex'
         )
@@ -73,6 +75,21 @@ module MembersHelper
   end
 
   # Returns inheritance information for an inherited member role
+  def render_inherited_roles(member)
+    s = ""
+    member.member_roles.each do |member_role|
+      next unless member_role.inherited_from
+
+      s << "<div class='inherited-role'>"
+      s << l(:label_inherited_from)
+      s << " "
+      s << link_to_project(member_role.inherited_from.project)
+      s << "</div>"
+    end
+    s.html_safe
+  end
+
+  # Returns inheritance information for a specific role
   def render_role_inheritance(member, role)
     content = member.role_inheritance(role).filter_map do |h|
       if h.is_a?(Project)
