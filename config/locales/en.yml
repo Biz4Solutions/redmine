@@ -1590,3 +1590,7 @@ en:
   label_bench_allocation: "Bench Allocation"
   label_available_allocation: "Available Allocation"
   text_bench_project_info: "If checked, allocations to this project will not count against resource availability and may be automatically reduced if total allocation exceeds 100%"
+
+  # Member allocation expiration messages
+  notice_member_allocations_expired: "Member allocations have been automatically expired due to project status change."
+  text_member_allocations_expired: "All member allocations for this project have been automatically expired as the project is now %{status}."

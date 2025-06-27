@@ -92,6 +92,11 @@ class Project < ApplicationRecord
 
   after_update :update_versions_from_hierarchy_change,
                :if => proc {|project| project.saved_change_to_parent_id?}
+  after_update :expire_member_allocations,
+               :if => proc {|project|
+                 project.saved_change_to_status? &&
+                              [STATUS_CLOSED, STATUS_ARCHIVED, STATUS_SCHEDULED_FOR_DELETION].include?(project.status)
+               }
   before_destroy :delete_all_members
   after_save :update_inherited_members,
              :if => proc {|project| project.saved_change_to_inherit_members?}
@@ -1338,5 +1343,10 @@ class Project < ApplicationRecord
   def fetch_last_activity_date
     latest_activities = Redmine::Activity::Fetcher.new(User.current, :project => self).events(nil, nil, :last_by_project => true)
     latest_activities.empty? ? nil : latest_activities.to_h[self.id]
+  end
+
+  def expire_member_allocations
+    # Expire all member allocations for this project when it's closed, archived, or scheduled for deletion
+    Member.expire_allocations_for_project(id, Date.today)
   end
 end

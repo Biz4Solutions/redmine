@@ -34,7 +34,8 @@ class Member < ApplicationRecord
   before_destroy :set_issue_category_nil, :remove_from_project_default_assigned_to
 
   scope :active, (lambda do
-    joins(:principal).where(:users => {:status => Principal::STATUS_ACTIVE})
+    joins(:principal, :project).where(:users => {:status => Principal::STATUS_ACTIVE})
+      .where(:projects => {:status => Project::STATUS_ACTIVE})
       .where("(members.end_date IS NULL OR members.end_date >= ?)", Date.today)
       .where("(members.start_date IS NULL OR members.start_date <= ?)", Date.today)
   end)
@@ -251,9 +252,10 @@ class Member < ApplicationRecord
 
   # Returns the total allocation percentage for a user across all active projects
   def self.total_allocation_for_user(user_id, date=Date.today)
-    joins(:principal)
+    joins(:principal, :project)
       .where(user_id: user_id)
       .where(users: { status: Principal::STATUS_ACTIVE })  # Only include active users
+      .where(projects: { status: Project::STATUS_ACTIVE })  # Only include active projects
       .where("(end_date IS NULL OR end_date >= ?)", date)  # Only check end date
       .where("allocation_percentage > 0")  # Exclude deactivated memberships
       .sum(:allocation_percentage) || 0
@@ -264,6 +266,7 @@ class Member < ApplicationRecord
     joins(:principal, :project)
       .where(user_id: user_id)
       .where(users: { status: Principal::STATUS_ACTIVE })
+      .where(projects: { status: Project::STATUS_ACTIVE })  # Only include active projects
       .where("(end_date IS NULL OR end_date >= ?)", date)
       .where("allocation_percentage > 0")
       .where(projects: { bench_project: false })
@@ -275,6 +278,7 @@ class Member < ApplicationRecord
     joins(:principal, :project)
       .where(user_id: user_id)
       .where(users: { status: Principal::STATUS_ACTIVE })
+      .where(projects: { status: Project::STATUS_ACTIVE })  # Only include active projects
       .where("(end_date IS NULL OR end_date >= ?)", date)
       .where("allocation_percentage > 0")
       .where(projects: { bench_project: true })
@@ -293,6 +297,23 @@ class Member < ApplicationRecord
       # We don't actually delete the membership, just mark it as inactive
       # by setting allocation_percentage to 0
       member.update_column(:allocation_percentage, 0)
+    end
+  end
+
+  # Expire all member allocations for a project when it's closed, archived, or scheduled for deletion
+  def self.expire_allocations_for_project(project_id, expiration_date)
+    # Find all active memberships for this project that haven't already expired
+    memberships = joins(:project)
+                  .where(project_id: project_id)
+                  .where("(end_date IS NULL OR end_date > ?)", expiration_date)
+                  .where("allocation_percentage > 0")
+
+    memberships.find_each do |membership|
+      # Set the end_date to the expiration date and set allocation_percentage to 0
+      membership.update_columns(
+        end_date: expiration_date,
+        allocation_percentage: 0
+      )
     end
   end
 
@@ -330,17 +351,16 @@ class Member < ApplicationRecord
     date = Date.today
 
     # Get all active allocations for this user except this one, excluding inherited members
-    other_allocations = self.class.joins(:member_roles)
+    other_allocations = self.class.joins(:member_roles, :project)
                             .where(user_id: user_id)
                             .where("(start_date IS NULL OR start_date <= ?)", date)
                             .where("(end_date IS NULL OR end_date >= ?)", date)
                             .where(member_roles: { inherited_from: nil })
+                            .where(projects: { status: Project::STATUS_ACTIVE })  # Only include active projects
                             .distinct
 
     # Exclude this record if it's being updated
     other_allocations = other_allocations.where.not(id: id) unless new_record?
-
-    Rails.logger.info "Other allocations: #{other_allocations.inspect} , this allocation_percentage: #{allocation_percentage}"
 
     # Sum up other allocations
     total_other_allocations = other_allocations.sum(:allocation_percentage) || 0
@@ -353,7 +373,7 @@ class Member < ApplicationRecord
       if project.bench_project
         # Get all bench project allocations for this user
         bench_allocations = other_allocations.joins(:project)
-                                          .where(projects: { bench_project: true })
+                                          .where(projects: { bench_project: true, status: Project::STATUS_ACTIVE })
                                           .order(:allocation_percentage)
 
         # Calculate how much we need to reduce
@@ -379,7 +399,7 @@ class Member < ApplicationRecord
       else
         # For non-bench projects, check if we can reduce bench allocations to accommodate this
         bench_allocations = other_allocations.joins(:project)
-                                          .where(projects: { bench_project: true })
+                                          .where(projects: { bench_project: true, status: Project::STATUS_ACTIVE })
                                           .order(:allocation_percentage)
 
         # Calculate how much we need to reduce from bench allocations
