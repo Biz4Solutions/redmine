@@ -20,11 +20,12 @@
 class TimelogController < ApplicationController
   menu_item :time_entries
 
-  before_action :find_time_entry, :only => [:show, :edit, :update, :approve, :reject]
+  before_action :find_time_entry, :only => [:show, :edit, :update, :approve, :reject, :submit]
   before_action :check_editability, :only => [:edit, :update]
-  before_action :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy, :bulk_approve, :bulk_reject]
-  before_action :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy, :approve, :reject, :bulk_approve, :bulk_reject]
+  before_action :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy, :bulk_approve, :bulk_reject, :bulk_submit]
+  before_action :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy, :approve, :reject, :bulk_approve, :bulk_reject, :submit]
   before_action :check_approval_permission, :only => [:approve, :reject, :bulk_approve, :bulk_reject]
+  before_action :check_log_time_permission, :only => [:submit]
 
   before_action :find_optional_issue, :only => [:new, :create]
   before_action :find_optional_project, :only => [:index, :report]
@@ -301,13 +302,13 @@ class TimelogController < ApplicationController
 
   def bulk_approve
     approved_count = 0
-    
+
     @time_entries.each do |time_entry|
       if time_entry.can_approve?(User.current) && time_entry.approve(User.current)
         approved_count += 1
       end
     end
-    
+
     respond_to do |format|
       format.html do
         flash[:notice] = l(:notice_time_entries_approved, :count => approved_count)
@@ -319,21 +320,21 @@ class TimelogController < ApplicationController
 
   def bulk_reject
     rejection_reason = params[:rejection_reason]
-    
+
     if rejection_reason.blank?
       flash[:error] = l(:error_rejection_reason_required)
       redirect_back_or_default project_time_entries_path(@projects.first)
       return
     end
-    
+
     rejected_count = 0
-    
+
     @time_entries.each do |time_entry|
       if time_entry.can_approve?(User.current) && time_entry.reject(User.current, rejection_reason)
         rejected_count += 1
       end
     end
-    
+
     respond_to do |format|
       format.html do
         flash[:notice] = l(:notice_time_entries_rejected, :count => rejected_count)
@@ -343,52 +344,33 @@ class TimelogController < ApplicationController
     end
   end
 
-  # Show time entries that are pending submission
-  def pending_submission
-    @query = TimeEntryQuery.new(:name => '_')
-    @query.filters = {'status' => {:operator => '=', :values => [TimeEntry::STATUS_PENDING]}}
-    
-    if params[:user_id] == 'me' || params[:user_id].blank?
-      @query.filters['user_id'] = {:operator => '=', :values => ['me']}
-    end
-    
-    @query.sort_criteria = [['spent_on', 'desc']]
-    @query.column_names = [:project, :spent_on, :user, :activity, :issue, :comments, :hours]
-    
-    @entries = @query.results_scope
-    
-    respond_to do |format|
-      format.html { render :action => 'pending_submission' }
-    end
-  end
-  
   # Submit a time entry for approval
   def submit
-    @time_entry = TimeEntry.find(params[:id])
-    
+    find_time_entry
+
     if @time_entry.user_id != User.current.id
       flash[:error] = l(:error_not_your_time_entry)
       redirect_back_or_default project_time_entries_path(@project)
       return
     end
-    
+
     if @time_entry.status != TimeEntry::STATUS_PENDING
       flash[:error] = l(:error_time_entry_already_submitted)
       redirect_back_or_default project_time_entries_path(@project)
       return
     end
-    
+
     # Time entry is already in pending status, so we just need to notify approvers
     Mailer.deliver_time_entry_pending_approval(@time_entry)
-    
+
     flash[:notice] = l(:notice_time_entry_submitted)
     redirect_back_or_default project_time_entries_path(@project)
   end
-  
+
   # Submit multiple time entries for approval
   def bulk_submit
     submitted_count = 0
-    
+
     @time_entries.each do |time_entry|
       if time_entry.user_id == User.current.id && time_entry.status == TimeEntry::STATUS_PENDING
         # Time entry is already in pending status, so we just need to notify approvers
@@ -396,9 +378,15 @@ class TimelogController < ApplicationController
         submitted_count += 1
       end
     end
-    
+
     flash[:notice] = l(:notice_time_entries_submitted, :count => submitted_count)
-    redirect_back_or_default time_entries_pending_submission_path
+    redirect_back_or_default time_entries_path
+  end
+
+  def get_activities
+    @project = Project.find(params[:project_id])
+    @activities = @project.activities
+    render :partial => 'activities', :locals => { :activities => @activities }
   end
 
   private
@@ -457,6 +445,13 @@ class TimelogController < ApplicationController
 
   def check_approval_permission
     unless User.current.allowed_to?(:approve_time_entries, @project || @projects)
+      deny_access
+      return false
+    end
+  end
+
+  def check_log_time_permission
+    unless User.current.allowed_to?(:log_time, @project || @projects)
       deny_access
       return false
     end

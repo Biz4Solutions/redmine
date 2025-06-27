@@ -144,11 +144,27 @@ en:
             allocation_percentage:
               invalid_range: must be between 0 and 100
               exceeds_total: would exceed 100% total allocation for this user
+              non_inherited_requires_allocation: must be greater than 0 for non-inherited members
         timesheet:
           attributes:
             base:
               overlapping_timesheet: "A timesheet already exists for this date range"
               timesheet_must_be_one_week: "Timesheet must cover exactly one week"
+            error_cannot_delete_time_entry: "Cannot delete time entry"
+            error_cannot_edit_time_entry: "Cannot edit time entry"
+            notice_time_entry_added: "Time entry was successfully added"
+            notice_time_entry_deleted: "Time entry was successfully deleted"
+            notice_time_entry_updated: "Time entry was successfully updated"
+            notice_timesheet_submitted: "Timesheet was successfully submitted"
+            notice_timesheet_approved: "Timesheet was successfully approved"
+            notice_timesheet_rejected: "Timesheet was successfully rejected"
+            notice_timesheet_resubmitted: "Timesheet was successfully resubmitted"
+            notice_successful_create: "Successfully created"
+            notice_successful_update: "Successfully updated"
+            notice_successful_delete: "Successfully deleted"
+            notice_timesheets_submitted: "%{count} timesheet(s) were successfully submitted"
+            notice_timesheets_approved: "%{count} timesheet(s) were successfully approved"
+            notice_timesheets_rejected: "%{count} timesheet(s) were successfully rejected"
 
   actionview_instancetag_blank_option: Please select
 
@@ -609,6 +625,7 @@ en:
   permission_manage_related_issues: Manage related issues
   permission_import_issues: Import issues
   permission_log_time_for_other_users: Log spent time for other users
+  permission_approve_all_time_entries: Approve all time entries
 
   project_module_issue_tracking: Issue tracking
   project_module_time_tracking: Time tracking
@@ -1440,8 +1457,7 @@ en:
   # Member allocation
   field_allocation_percentage: "Allocation %"
   field_total_allocation: "Total allocation"
-  field_start_date: "Start date"
-  field_end_date: "End date"
+  field_end_date: "End Date"
   field_billable: "Billable"
   label_allocation: "Allocation"
   
@@ -1451,7 +1467,10 @@ en:
   error_spent_on_after_allocation_end: "Date is after the allocation end date (%{end_date})"
   error_exceeds_allocation_percentage: "Exceeds maximum hours (%{max_hours}) based on allocation % (%{allocation}%)"
 
-  # Timesheet approval workflow
+  # Global translations
+  label_timesheet: "Timesheet"
+  label_timesheet_plural: "Timesheets"
+  label_timesheet_edit: "Edit Timesheet"
   label_timesheet_approval: "Timesheet Approval"
   label_pending_approval: "Pending Approval"
   label_approved: "Approved"
@@ -1463,130 +1482,126 @@ en:
   label_reject_selected: "Reject Selected"
   label_approve_all: "Approve All"
   label_reject_all: "Reject All"
+  label_submit_for_approval: "Submit for Approval"
+  label_draft: "Draft"
   
-  field_status: "Status"
   field_approved_by: "Approved By"
   field_approved_on: "Approved On"
   field_rejection_reason: "Rejection Reason"
+  field_total_hours: "Total Hours"
+  field_week: "Week"
+  field_date_range: "Date Range"
   
   permission_approve_time_entries: "Approve time entries"
   
-  error_cannot_modify_approved_time_entry: "Cannot modify an approved time entry"
-  notice_time_entry_approved: "Time entry was successfully approved"
-  notice_time_entry_rejected: "Time entry was successfully rejected"
-  notice_time_entries_approved: "%{count} time entries were successfully approved"
-  notice_time_entries_rejected: "%{count} time entries were successfully rejected"
+  # Timesheet-specific translations
+  timesheet:
+    # Labels
+    label_timesheet: "Timesheet"
+    label_timesheet_plural: "Timesheets"
+    label_timesheet_new: "New Timesheet"
+    label_timesheet_edit: "Edit Timesheet"
+    label_timesheet_show: "Show Timesheet"
+    label_timesheet_submit: "Submit Timesheet"
+    label_timesheet_approve: "Approve Timesheet"
+    label_timesheet_reject: "Reject Timesheet"
+    label_log_time: "Log Time"
+    label_time_entries: "Time Entries"
+    label_time_entry: "Time Entry"
+    label_time_entry_plural: "Time Entries"
+    label_new_time_entry: "New Time Entry"
+    label_edit_time_entry: "Edit Time Entry"
+    label_pending_submission: "Pending Timesheets"
+    label_my_pending_timesheets: "My Pending Timesheets"
+    label_timesheets_pending_my_approval: "Timesheets Pending for approval"
+    label_pending_timesheet: "Pending Timesheet"
+    label_pending_timesheet_plural: "Pending Timesheets"
+    label_pending_time_entry: "Pending Time Entry"
+    label_pending_time_entry_plural: "Pending Time Entries"
+    label_my_pending_time_entries: "My Pending Time Entries"
+    label_pending_timesheets: "Pending Timesheets"
+    label_draft: "Draft"
+    label_my_timesheets: "My Timesheets"
+    label_timesheets_for_approval: "Timesheets for Approval"
+    label_resubmit_for_approval: "Resubmit for Approval"
+    label_previously_rejected: "Previously Rejected"
+    
+    # Fields
+    field_week: "Week"
+    field_start_date: "Start Date"
+    field_end_date: "End Date"
+    field_status: "Status"
+    field_user: "User"
+    field_submitted_by: "Submitted By"
+    field_approved_by: "Approved By"
+    field_approved_on: "Approved On"
+    field_rejection_reason: "Rejection Reason"
+    field_project: "Project"
+    field_issue: "Issue"
+    field_spent_on: "Date"
+    field_hours: "Hours"
+    field_activity: "Activity"
+    field_comments: "Comments"
+    field_total_hours: "Total Hours"
+    
+    # Status labels
+    label_status_draft: "Draft"
+    label_status_submitted: "Submitted"
+    label_status_pending: "Pending Approval"
+    label_status_approved: "Approved"
+    label_status_rejected: "Rejected"
+    label_pending_approval: "Pending Approval"
+    label_approved: "Approved"
+    label_rejected: "Rejected"
+    
+    # Buttons
+    button_add: "Add"
+    button_create: "Create"
+    button_delete: "Delete"
+    button_edit: "Edit"
+    button_save: "Save"
+    button_cancel: "Cancel"
+    button_submit: "Submit"
+    button_approve: "Approve"
+    button_reject: "Reject"
+    button_view: "View"
+    
+    # Messages
+    text_are_you_sure: "Are you sure?"
+    label_no_data: "No data"
+    label_submit_for_approval: "Submit for Approval"
+    label_me: "Me"
+    label_all: "All"
+    label_filter_plural: "Filters"
+    button_apply: "Apply"
+    button_clear: "Clear"
+    
+    # Errors
+    error_timesheet_must_be_one_week: "Timesheet must cover exactly one week"
+    error_overlapping_timesheet: "A timesheet already exists for this date range"
+    error_user_not_allocated_to_project: "User is not allocated to this project"
+    error_spent_on_before_allocation_start: "Time entry date is before project allocation start date"
+    error_spent_on_after_allocation_end: "Time entry date is after project allocation end date"
+    error_exceeds_allocation_percentage: "Time entry exceeds project allocation percentage"
+    error_spent_on_out_of_range: "The date must be within the timesheet's date range"
+    error_spent_on_outside_timesheet_range: "The date must be within the timesheet's date range"
+    error_cannot_delete_time_entry: "Cannot delete time entry"
+    error_cannot_edit_time_entry: "Cannot edit time entry"
+    error_cannot_submit_timesheet: "Cannot submit timesheet"
+    error_cannot_approve_timesheet: "Cannot approve timesheet"
+    error_cannot_reject_timesheet: "Cannot reject timesheet"
+    error_rejection_reason_required: "Rejection reason is required"
+    notice_time_entry_added: "Time entry was successfully added"
+    notice_time_entry_deleted: "Time entry was successfully deleted"
+    notice_time_entry_updated: "Time entry was successfully updated"
+    notice_timesheet_submitted: "Timesheet was successfully submitted"
+    notice_timesheet_approved: "Timesheet was successfully approved"
+    notice_timesheet_rejected: "Timesheet was successfully rejected"
+    notice_timesheet_resubmitted: "Timesheet was successfully resubmitted"
+    notice_successful_create: "Successfully created"
+    notice_successful_update: "Successfully updated"
+    notice_successful_delete: "Successfully deleted"
+    notice_timesheets_submitted: "%{count} timesheet(s) were successfully submitted"
+    notice_timesheets_approved: "%{count} timesheet(s) were successfully approved"
+    notice_timesheets_rejected: "%{count} timesheet(s) were successfully rejected"
 
-  # Email subjects
-  mail_subject_time_entry_pending_approval: "Time entry pending approval"
-  mail_subject_time_entry_approved: "Time entry approved"
-  mail_subject_time_entry_rejected: "Time entry rejected"
-  mail_subject_time_entry_pending_approval_reminder: "Pending time entries require your approval"
-
-  # Email bodies
-  mail_body_time_entry_pending_approval: "%{user} has submitted %{hours} hours for %{project} that requires your approval."
-  mail_body_time_entry_approved: "%{approver} has approved your time entry of %{hours} hours for %{project}."
-  mail_body_time_entry_rejected: "%{approver} has rejected your time entry of %{hours} hours for %{project}."
-  mail_body_time_entry_pending_approval_reminder: "You have %{count} time entries waiting for your approval."
-
-  # Field labels
-  field_status: "Status"
-  field_approved_by: "Approved by"
-  field_approved_on: "Approved on"
-  field_rejected_on: "Rejected on"
-  field_rejection_reason: "Rejection reason"
-  
-  # Button labels
-  label_approve: "Approve"
-  label_reject: "Reject"
-  label_approve_selected: "Approve Selected"
-  label_reject_selected: "Reject Selected"
-  label_pending_approval: "Pending Approval"
-  label_approved: "Approved"
-  label_rejected: "Rejected"
-  label_rejection_reason: "Rejection Reason"
-
-  # Flash messages
-  notice_time_entry_approved: "Time entry was successfully approved."
-  notice_time_entry_rejected: "Time entry was successfully rejected."
-  notice_time_entries_approved: "%{count} time entries were successfully approved."
-  notice_time_entries_rejected: "%{count} time entries were successfully rejected."
-
-  label_pending_approval: "Pending Approval"
-  label_approved: "Approved"
-  label_rejected: "Rejected"
-  label_rejection_reason: "Rejection Reason"
-  label_pending_timesheets: "Pending Timesheets for Approval"
-  label_my_pending_time_entries: "My Pending Time Entries"
-  label_submit_for_approval: "Submit for Approval"
-  label_submit_selected_for_approval: "Submit Selected for Approval"
-  label_pending_submission: "Pending Submission Time Entries"
-  label_timesheets: "Timesheets"
-  label_timesheet_new: "New Timesheet"
-  label_draft: "Draft"
-  label_week: "Week"
-  
-  error_not_your_time_entry: "You can only submit your own time entries"
-  error_time_entry_already_submitted: "This time entry has already been submitted"
-  error_rejection_reason_required: "Rejection reason is required"
-  
-  notice_time_entry_submitted: "Time entry was successfully submitted for approval"
-  notice_time_entries_submitted: "%{count} time entries were successfully submitted for approval"
-
-  error_spent_on_future_date: "Cannot log time on a future date"
-  error_not_allowed_to_log_time_for_other_users: "You are not allowed to log time for other users"
-  error_can_not_execute_macro_html: "Error executing the <strong>%{name}</strong> macro (%{error})"
-  error_macro_does_not_accept_block: "This macro does not accept a block of text"
-  error_childpages_macro_no_argument: "With no argument, this macro can be called from wiki pages only"
-  error_circular_inclusion: "Circular inclusion detected"
-  error_page_not_found: "Page not found"
-  error_filename_required: "Filename required"
-  error_not_your_time_entry: "You can only submit your own time entries"
-  error_time_entry_already_submitted: "This time entry has already been submitted"
-  error_rejection_reason_required: "Rejection reason is required"
-  error_cannot_modify_approved_time_entry: "Cannot modify an approved time entry"
-  error_cannot_modify_time_entry_in_submitted_timesheet: "Cannot modify a time entry in a submitted timesheet"
-  error_user_not_allocated_to_project: "User is not allocated to this project"
-  error_user_not_allocated_to_project_on_date: "User is not allocated to this project on the specified date"
-  error_spent_on_before_allocation_start: "Cannot log time before allocation start date (%{start_date})"
-  error_spent_on_after_allocation_end: "Cannot log time after allocation end date (%{end_date})"
-  error_exceeds_allocation_percentage: "Hours exceed user's allocation % (maximum %{max_hours} hours per day at %{allocation}% allocation)"
-
-  label_pending_submission: "Pending Submission Time Entries"
-  label_timesheets: "Timesheets"
-  label_timesheet_new: "New Timesheet"
-  label_draft: "Draft"
-  label_week: "Week"
-  label_pending_approval: "Pending Approval"
-  label_approved: "Approved"
-  label_rejected: "Rejected"
-  label_rejection_reason: "Rejection Reason"
-  label_pending_timesheets: "Pending Timesheets for Approval"
-  label_my_pending_time_entries: "My Pending Time Entries"
-  label_submit_for_approval: "Submit for Approval"
-  label_submit_selected_for_approval: "Submit Selected for Approval"
-  label_approve_selected: "Approve Selected"
-  label_reject_selected: "Reject Selected"
-  label_date_range: "Date Range"
-  
-  field_week: "Week"
-  field_date_range: "Date Range"
-  field_approved_by: "Approved By"
-  field_approved_on: "Approved On"
-  field_rejection_reason: "Rejection Reason"
-  
-  notice_timesheet_submitted: "Timesheet was successfully submitted for approval"
-  notice_timesheets_submitted: "%{count} timesheets were successfully submitted for approval"
-  notice_timesheets_approved: "%{count} timesheets were successfully approved"
-  notice_timesheets_rejected: "%{count} timesheets were successfully rejected"
-
-  label_project_allocations: "Project Allocations"
-  label_project_plural: "Projects"
-  label_active_allocations: "Active Allocations"
-  label_past_allocations: "Past Allocations"
-
-  label_bench_project: "Bench Project"
-  label_regular_allocation: "Regular Allocation"
-  label_bench_allocation: "Bench Allocation"
-  label_available_allocation: "Available Allocation"
-  text_bench_project_info: "If checked, allocations to this project will not count against resource availability and may be automatically reduced if total allocation exceeds 100%"

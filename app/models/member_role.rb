@@ -23,7 +23,6 @@ class MemberRole < ApplicationRecord
 
   after_create :add_role_to_group_users, :add_role_to_subprojects
   after_destroy :remove_member_if_empty
-
   after_destroy :remove_inherited_roles
 
   validates_presence_of :role
@@ -72,8 +71,17 @@ class MemberRole < ApplicationRecord
 
     member.project.children.where(:inherit_members => true).ids.each do |subproject_id|
       child_member = Member.find_or_initialize_by(:project_id => subproject_id, :user_id => member.user_id)
+      # Set allocation_percentage to 0 for inherited members to avoid allocation validation issues
+      child_member.allocation_percentage = 0 if child_member.new_record?
+      Rails.logger.info "Child member: #{child_member.inspect}"
+      Rails.logger.info "Adding role to subproject: #{subproject_id}, role_id: #{role_id}, inherited_from: #{id}"
       child_member.member_roles << MemberRole.new(:role => role, :inherited_from => id)
-      child_member.save!
+      begin
+        child_member.save!
+        Rails.logger.info "Saved successfully"
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error "Failed: #{e.message}"
+      end
     end
   end
 

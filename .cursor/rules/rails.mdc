@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ALWAYS add translations when adding new labels/buttons/strings:
+1. First add the translation to config/locales/en.yml in the appropriate scope
+2. Then use the translation key in the code with proper scope
+3. Never use hardcoded strings for user-facing text

@@ -44,10 +44,10 @@ class MyController < ApplicationController
     @user = User.current
     @groups = @user.pref.my_page_groups
     @blocks = @user.pref.my_page_layout
-    
-    # Add pending_timesheets block for users with approve_time_entries permission
-    if @user.allowed_to?(:approve_time_entries, nil, :global => true) && 
-       @user.pref.my_page_layout.values.flatten.exclude?('pending_timesheets')
+
+    # Add timesheets_pending_my_approval block for users with approve_time_entries permission
+    if @user.allowed_to?(:approve_time_entries, nil, :global => true) &&
+       @user.pref.my_page_layout.values.flatten.exclude?('timesheets_pending_my_approval')
       # Use the approver layout if the user hasn't customized their page yet
       if @user.pref.my_page_layout == Redmine::MyPage.default_layout
         @blocks = Redmine::MyPage.default_layout_for_approvers
@@ -55,12 +55,12 @@ class MyController < ApplicationController
         @user.pref.save
       end
     end
-    
-    # Remove pending_timesheets block for users without approve_time_entries permission
+
+    # Remove timesheets_pending_my_approval block for users without approve_time_entries permission
     unless @user.allowed_to?(:approve_time_entries, nil, :global => true)
       @blocks.each do |group, blocks|
-        if blocks.include?('pending_timesheets')
-          @blocks[group].delete('pending_timesheets')
+        if blocks.include?('timesheets_pending_my_approval')
+          @blocks[group].delete('timesheets_pending_my_approval')
           @user.pref.my_page_layout = @blocks
           @user.pref.save
         end

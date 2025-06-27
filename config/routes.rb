@@ -257,6 +257,7 @@ Rails.application.routes.draw do
       patch 'edit', :to => 'timelog#edit'
       post 'approve', :to => 'timelog#approve'
       post 'reject', :to => 'timelog#reject'
+      post 'submit', :to => 'timelog#submit'
     end
     collection do
       get 'report'
@@ -264,7 +265,6 @@ Rails.application.routes.draw do
       post 'bulk_update'
       post 'bulk_approve', :to => 'timelog#bulk_approve'
       post 'bulk_reject', :to => 'timelog#bulk_reject'
-      get 'pending_submission', :to => 'timelog#pending_submission'
       post 'submit', :to => 'timelog#submit'
       post 'bulk_submit', :to => 'timelog#bulk_submit'
     end
@@ -421,21 +421,30 @@ Rails.application.routes.draw do
 
   # Timesheets
   resources :timesheets do
-    member do
-      post 'submit'
-    end
-
     collection do
-      post 'bulk_submit'
+      get 'pending_approval'
+      get 'for_approval'
       post 'bulk_approve'
       post 'bulk_reject'
-      get 'pending_approval'
+    end
+    member do
+      post :submit
+      post :approve
+      post :reject
+      post :add_time_entry
+      delete :remove_time_entry
     end
   end
 
   resources :members do
     collection do
       get 'max_availability/:user_id', to: 'members#max_availability'
+    end
+  end
+
+  resources :timelog do
+    collection do
+      get :get_activities
     end
   end
 

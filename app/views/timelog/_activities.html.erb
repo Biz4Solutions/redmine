@@ -1,0 +1,7 @@
+<% if activities.any? %>
+  <% activities.each do |activity| %>
+    <option value="<%= activity.id %>"><%= activity.name %></option>
+  <% end %>
+<% else %>
+  <option value=""><%= l(:label_no_activities) %></option>
+<% end %> 

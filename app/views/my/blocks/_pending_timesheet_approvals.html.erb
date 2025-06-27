@@ -21,7 +21,7 @@
 %>
 
 <h3>
-  <%= link_to l(:label_pending_timesheets), pending_approval_timesheets_path %>
+  <%= link_to l(:label_pending_timesheets, :scope => :timesheet), pending_approval_timesheets_path %>
   (<%= timesheets.count %>)
 </h3>
 

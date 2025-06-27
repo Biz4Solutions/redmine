@@ -34,7 +34,7 @@ module Redmine
       'documents' => {:label => :label_document_plural},
       'timelog' => {:label => :label_spent_time},
       'activity' => {:label => :label_activity},
-      'my_pending_time_entries' => {:label => :label_my_pending_time_entries}
+      'my_pending_timesheets' => {:label => :label_my_pending_timesheets}
     }
 
     def self.groups
@@ -44,12 +44,12 @@ module Redmine
     # Returns the available blocks
     def self.blocks
       blocks = CORE_BLOCKS.dup
-      
-      # Only add the pending_timesheets block for users with approve_time_entries permission
-      unless blocks.key?('pending_timesheets') || !User.current.allowed_to?(:approve_time_entries, nil, :global => true)
-        blocks['pending_timesheets'] = {:label => :label_pending_timesheets}
+
+      # Only add the timesheets_pending_my_approval block for users with approve_time_entries permission
+      unless blocks.key?('timesheets_pending_my_approval') || !User.current.allowed_to?(:approve_time_entries, nil, :global => true)
+        blocks['timesheets_pending_my_approval'] = {:label => :label_timesheets_pending_my_approval}
       end
-      
+
       blocks.merge(additional_blocks).freeze
     end
 
@@ -98,16 +98,16 @@ module Redmine
     # Returns the default layout for My Page
     def self.default_layout
       {
-        'left' => ['issuesassignedtome'],
+        'left' => ['my_pending_timesheets'],
         'right' => ['issuesreportedbyme'],
-        'top' => ['my_pending_time_entries']
+        'top' => ['timesheets_pending_my_approval', 'my_pending_timesheets']
       }
     end
 
     # Returns the default layout for My Page for users with approve_time_entries permission
     def self.default_layout_for_approvers
       layout = default_layout
-      layout['top'] = ['pending_timesheets']
+      layout['top'] = ['timesheets_pending_my_approval', 'my_pending_timesheets']
       layout
     end
   end

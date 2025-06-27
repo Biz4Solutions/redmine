@@ -7,7 +7,8 @@
   <% elsif @time_entry.new_record? && params[:issue_id] %>
     <%= hidden_field_tag 'issue_id', params[:issue_id] %>
   <% else %>
-    <p><%= f.select :project_id, project_tree_options_for_select(Project.allowed_to(:log_time).to_a, :selected => @time_entry.project, :include_blank => true), :required => true %></p>
+    <% projects_for_select = @projects || Project.allowed_to(:log_time).to_a %>
+    <p><%= f.select :project_id, project_tree_options_for_select(projects_for_select, :selected => @time_entry.project, :include_blank => true), :required => true %></p>
   <% end %>
 
   <p>
@@ -25,7 +26,7 @@
       <span><%= link_to_user(@time_entry.user) %></span>
     </p>
   <% end %>
-  <p><%= f.date_field :spent_on, :size => 10, :required => true %><%= calendar_for('time_entry_spent_on') %></p>
+  <p><%= f.date_field :spent_on, :size => 10, :required => true, :value => defined?(@timesheet) && @timesheet ? @timesheet.start_date : @time_entry.spent_on %><%= calendar_for('time_entry_spent_on') %></p>
   <p><%= f.hours_field :hours, :size => 6, :required => true %></p>
   <p><%= f.text_field :comments, :size => 100, :maxlength => 1024, :required => Setting.timelog_required_fields.include?('comments') %></p>
   <p><%= f.select :activity_id, activity_collection_for_select_options(@time_entry), :required => true %></p>

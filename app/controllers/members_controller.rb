@@ -68,18 +68,22 @@ class MembersController < ApplicationController
         member.start_date = params[:membership][:start_date]
         member.end_date = params[:membership][:end_date]
         member.billable = params[:membership].has_key?(:billable) ? params[:membership][:billable] == '1' : false
+        Rails.logger.info "Member being created: #{member.inspect}"
 
         members << member
       end
+      Rails.logger.info "Members array: #{members.inspect}"
 
       # Try to save all members
       saved = true
       Member.transaction do
         members.each do |member|
+          Rails.logger.info "Saving member: #{member.inspect}"
           unless member.save
             saved = false
             # Store the error messages from the first failed member
             @member_errors = member.errors.full_messages
+            Rails.logger.error "Failed to save member: #{@member_errors.join(', ')}"
             raise ActiveRecord::Rollback
           end
         end

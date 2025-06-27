@@ -1,8 +1,14 @@
 <h2><%= l(:label_timesheet_edit) %></h2>
 
+<% if @timesheet.rejected? && @timesheet.rejection_reason.present? %>
+  <div class="warning">
+    <p><strong><%= l(:field_rejection_reason, :scope => :timesheet) %>:</strong></p>
+    <p><%= simple_format(@timesheet.rejection_reason) %></p>
+  </div>
+<% end %>
+
 <%= form_for @timesheet do |f| %>
   <%= render :partial => 'form', :locals => { :f => f } %>
-  <%= submit_tag l(:button_save) %>
 <% end %>
 
 <% html_title l(:label_timesheet_edit) %> 

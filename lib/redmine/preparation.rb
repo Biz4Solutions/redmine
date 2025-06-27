@@ -97,6 +97,7 @@ module Redmine
           map.permission :log_time_for_other_users, :require => :member
           map.permission :import_time_entries, {:timelog_imports => [:new, :create, :show, :settings, :mapping, :run]}, :require => :member
           map.permission :approve_time_entries, {:timelog => [:approve, :reject]}, :require => :member
+          map.permission :approve_all_time_entries, {:timesheets => [:index, :show, :approve, :reject, :bulk_approve, :bulk_reject]}, :require => :member
         end
 
         map.project_module :news do |map|
@@ -202,15 +203,20 @@ module Redmine
           :time_entries,
           {:controller => 'timelog', :action => 'index'},
           :caption => :label_spent_time,
-          :if => Proc.new {
+          :if => Proc.new do
             User.current.allowed_to?(:view_time_entries, nil, :global => true) ||
             User.current.allowed_to?(:log_time, nil, :global => true)
-          }
+          end
         )
         menu.push :timesheets, {:controller => 'timesheets', :action => 'index'},
-          :caption => :label_timesheets,
+          :caption => :label_timesheet_plural,
           :if => Proc.new {
-            User.current.logged?
+            User.current.logged? && (
+              User.current.admin? ||
+              User.current.allowed_to_globally?(:approve_all_time_entries) ||
+              User.current.allowed_to_globally?(:approve_time_entries) ||
+              User.current.allowed_to?(:log_time, nil, :global => true)
+            )
           }
         menu.push(
           :gantt,
@@ -242,11 +248,6 @@ module Redmine
             end,
           :caption => :label_news_plural
         )
-        menu.push :pending_submission, {:controller => 'timelog', :action => 'pending_submission'},
-          :caption => :label_pending_submission,
-          :if => Proc.new {
-            User.current.allowed_to?(:log_time, nil, :global => true)
-          }
       end
 
       MenuManager.map :admin_menu do |menu|
@@ -371,9 +372,14 @@ module Redmine
         )
         menu.push :time_entries, {:controller => 'timelog', :action => 'index'},
                   :param => :project_id, :caption => :label_spent_time
-        menu.push :pending_submission, {:controller => 'timelog', :action => 'pending_submission'},
-                  :caption => :label_pending_submission,
-                  :if => Proc.new { User.current.allowed_to?(:log_time, nil, :global => true) }
+        menu.push :timesheets, {:controller => 'timesheets', :action => 'index'},
+                  :param => :project_id, :caption => :label_timesheet_plural,
+                  :if => Proc.new { |p|
+                    User.current.admin? ||
+                    User.current.allowed_to?(:approve_all_time_entries, p) ||
+                    User.current.allowed_to?(:approve_time_entries, p) ||
+                    User.current.allowed_to?(:log_time, p)
+                  }
         menu.push :gantt, {:controller => 'gantts', :action => 'show'},
                   :param => :project_id, :caption => :label_gantt
         menu.push :calendar, {:controller => 'calendars', :action => 'show'},

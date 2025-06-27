@@ -1,8 +1,8 @@
 <div class="contextual">
-  <%= link_to l(:label_timesheet_new), new_timesheet_path, :class => 'icon icon-add' %>
+  <%= link_to l(:label_timesheet_new, :scope => :timesheet), new_timesheet_path, :class => 'icon icon-add' %>
 </div>
 
-<h2><%= params[:action] == 'pending_approval' ? l(:label_pending_timesheets) : l(:label_timesheets) %></h2>
+<h2><%= params[:action] == 'pending_approval' ? l(:label_pending_timesheet, :scope => :timesheet) : l(:label_timesheet_plural, :scope => :timesheet) %></h2>
 
 <%= form_tag(timesheets_path, :method => :get, :id => 'query_form') do %>
 <fieldset id="filters" class="collapsible">
@@ -126,7 +126,7 @@
 <% if params[:action] == 'pending_approval' && User.current.allowed_to_globally?(:approve_time_entries) %>
 <% end %>
 
-<% html_title(l(:label_timesheets)) %>
+<% html_title(l(:label_timesheet_plural, :scope => :timesheet)) %>
 
 <% if params[:action] == 'pending_approval' && User.current.allowed_to_globally?(:approve_time_entries) %>
 <div id="bulk-reject-dialog" style="display:none;">

@@ -1,12 +1,144 @@
 <%= error_messages_for 'timesheet' %>
 
-<div class="box tabular">
+<div class="splitcontentleft">
   <p>
-    <%= f.label :start_date, l(:field_start_date) %>
-    <%= f.date_field :start_date, :required => true %>
+    <%= f.label :start_date, l(:field_start_date, :scope => :timesheet) %>
+    <% if @timesheet.new_record? %>
+      <%= f.date_field :start_date, :required => true %>
+    <% else %>
+      <%= f.hidden_field :start_date %>
+      <%= f.date_field :start_date, :required => true, :disabled => true %>
+    <% end %>
   </p>
   <p>
-    <%= f.label :end_date, l(:field_end_date) %>
-    <%= f.date_field :end_date, :required => true %>
+    <%= f.label :end_date, l(:field_end_date, :scope => :timesheet) %>
+    <% if @timesheet.new_record? %>
+      <%= f.date_field :end_date, :required => true %>
+    <% else %>
+      <%= f.hidden_field :end_date %>
+      <%= f.date_field :end_date, :required => true, :disabled => true %>
+    <% end %>
   </p>
-</div> 
+</div>
+<div class="clear"></div>
+<p class="buttons">
+  <%= f.submit l(@timesheet.new_record? ? :button_create : :button_save, :scope => :timesheet) %>
+</p>
+
+<% unless @timesheet.new_record? %>
+  <% if @timesheet.status == Timesheet::STATUS_DRAFT %>
+    <fieldset id="log_time">
+      <legend><%= l(:label_log_time, :scope => :timesheet) %></legend>
+      
+      <%= form_tag add_time_entry_timesheet_path(@timesheet), method: :post do %>
+        <%= labelled_fields_for :time_entry, @time_entry do |f| %>
+          <%= render :partial => 'timelog/form', :locals => { :f => f } %>
+        <% end %>
+        
+        <p class="buttons">
+          <%= submit_tag l(:button_add, :scope => :timesheet), :name => 'add_time_entry' %>
+        </p>
+      <% end %>
+    </fieldset>
+    
+    <% if @timesheet.time_entries.any? %>
+      <fieldset>
+        <legend><%= l(:label_time_entries, :scope => :timesheet) %></legend>
+        
+        <table class="list time-entries">
+          <thead>
+            <tr>
+              <th style="width: 150px;"><%= l(:field_project, :scope => :timesheet) %></th>
+              <th style="width: 300px;"><%= l(:field_issue, :scope => :timesheet) %></th>
+              <th style="width: 100px;"><%= l(:field_spent_on, :scope => :timesheet) %></th>
+              <th style="width: 80px;"><%= l(:field_hours, :scope => :timesheet) %></th>
+              <th style="width: 120px;"><%= l(:field_activity, :scope => :timesheet) %></th>
+              <th style="width: 200px;"><%= l(:field_comments, :scope => :timesheet) %></th>
+              <th style="width: 80px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @timesheet.time_entries.each do |entry| %>
+              <tr class="time-entry">
+                <td><%= entry.project %></td>
+                <td style="word-wrap: break-word; max-width: 300px;"><%= entry.issue %></td>
+                <td><%= format_date(entry.spent_on) %></td>
+                <td class="hours"><%= html_hours(format_hours(entry.hours.to_f)) %></td>
+                <td><%= entry.activity %></td>
+                <td style="word-wrap: break-word; max-width: 200px;"><%= entry.comments %></td>
+                <td class="buttons">
+                  <%= link_to l(:button_delete, :scope => :timesheet), 
+                      remove_time_entry_timesheet_path(@timesheet, :time_entry_id => entry.id),
+                      :method => :delete,
+                      :data => { :confirm => l(:text_are_you_sure, :scope => :timesheet) },
+                      :class => 'icon icon-del' %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </fieldset>
+    <% end %>
+  <% end %>
+<% end %>
+
+<% content_for :header_tags do %>
+  <%# Removed reference to missing timesheet.js file %>
+  <style>
+    .time-entries {
+      table-layout: fixed;
+      width: 100%;
+    }
+    
+    .time-entries th,
+    .time-entries td {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      vertical-align: top;
+    }
+    
+    .time-entries .subject,
+    .time-entries .comments {
+      max-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+    }
+    
+    .time-entries .hours {
+      text-align: center;
+    }
+    
+    .time-entries .spent-on {
+      text-align: center;
+    }
+  </style>
+<% end %>
+
+<script type="text/javascript">
+  // Add date validation for spent_on field
+  function validateSpentOnDate(date) {
+    var startDate = new Date('<%= @timesheet.start_date.to_s %>');
+    var endDate = new Date('<%= @timesheet.end_date.to_s %>');
+    var selectedDate = new Date(date);
+    
+    if (selectedDate < startDate || selectedDate > endDate) {
+      alert('<%= l(:error_spent_on_outside_timesheet_range, :scope => :timesheet) %>');
+      return false;
+    }
+    return true;
+  }
+
+  // Add validation before form submission
+  document.addEventListener('DOMContentLoaded', function() {
+    var form = document.querySelector('#log_time form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        var spentOnField = document.querySelector('#time_entry_spent_on');
+        if (!validateSpentOnDate(spentOnField.value)) {
+          e.preventDefault();
+        }
+      });
+    }
+  });
+</script> 

@@ -299,6 +299,7 @@ class Member < ApplicationRecord
   protected
 
   def validate_role
+    Rails.logger.info "Validating role: #{member_roles.inspect}"
     errors.add(:role, :empty) if member_roles.empty? && roles.empty?
   end
 
@@ -311,27 +312,43 @@ class Member < ApplicationRecord
   def validate_allocation_percentage
     return if allocation_percentage.nil?
 
-    if allocation_percentage <= 0 || allocation_percentage > 100
+    Rails.logger.debug { "Validating allocation_percentage: #{allocation_percentage}, inherited: #{any_inherited_role?}" }
+
+    # Basic range validation
+    if allocation_percentage < 0 || allocation_percentage > 100
       errors.add(:allocation_percentage, :invalid_range, message: "must be between 0 and 100")
+      return
+    end
+
+    # Allow 0% allocation for inherited members, but require > 0 for non-inherited
+    if allocation_percentage == 0 && !any_inherited_role?
+      errors.add(:allocation_percentage, :non_inherited_requires_allocation)
       return
     end
 
     # Skip validation if user_id is not set yet (happens during initial form submission)
     return if user_id.nil?
 
+    # Skip validation for inherited members (they don't count toward allocation limits)
+    return if any_inherited_role?
+
     # Calculate total allocation for this user including this record
     date = Date.today
 
-    # Get all active allocations for this user except this one
-    other_allocations = self.class.where(user_id: user_id)
+    # Get all active allocations for this user except this one, excluding inherited members
+    other_allocations = self.class.joins(:member_roles)
+                            .where(user_id: user_id)
                             .where("(start_date IS NULL OR start_date <= ?)", date)
                             .where("(end_date IS NULL OR end_date >= ?)", date)
+                            .where(member_roles: { inherited_from: nil })
 
     # Exclude this record if it's being updated
     other_allocations = other_allocations.where.not(id: id) unless new_record?
 
     # Sum up other allocations
     total_other_allocations = other_allocations.sum(:allocation_percentage) || 0
+
+    Rails.logger.debug { "Total other allocations: #{total_other_allocations}, this allocation: #{allocation_percentage}" }
 
     # Add the new allocation percentage
     total = total_other_allocations + allocation_percentage

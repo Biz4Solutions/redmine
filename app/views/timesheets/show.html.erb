@@ -12,6 +12,15 @@
     <% end %>
   <% end %>
   
+  <% if @timesheet.user_id == User.current.id && @timesheet.rejected? %>
+    <%= link_to l(:button_edit), edit_timesheet_path(@timesheet), :class => 'icon icon-edit' %>
+    <% if @timesheet.can_resubmit? %>
+      <%= link_to l(:label_resubmit_for_approval, :scope => :timesheet), submit_timesheet_path(@timesheet), 
+                  :method => :post, 
+                  :class => 'icon icon-checked' %>
+    <% end %>
+  <% end %>
+  
   <% if @timesheet.pending_approval? && User.current.allowed_to_globally?(:approve_time_entries) && @timesheet.can_approve?(User.current) %>
     <%= link_to l(:label_approve), bulk_approve_timesheets_path(:ids => [@timesheet.id]), 
                 :method => :post, 
@@ -77,35 +86,39 @@
 </div>
 
 <div class="autoscroll">
-<h3><%= l(:label_time_entry_plural) %></h3>
-<table class="list time-entries">
-  <thead>
-    <tr>
-      <th><%= l(:field_spent_on) %></th>
-      <th><%= l(:field_project) %></th>
-      <th><%= l(:field_issue) %></th>
-      <th><%= l(:field_hours) %></th>
-      <th><%= l(:field_activity) %></th>
-      <th><%= l(:field_comments) %></th>
-    </tr>
-  </thead>
-  <tbody>
-  <% @time_entries.each do |time_entry| %>
-    <tr class="time-entry <%= cycle('odd', 'even') %>">
-      <td class="spent-on"><%= format_date(time_entry.spent_on) %></td>
-      <td class="project"><%= link_to_project(time_entry.project) %></td>
-      <td class="subject">
-        <% if time_entry.issue %>
-          <%= link_to_issue(time_entry.issue, :truncate => 50) %>
-        <% end %>
-      </td>
-      <td class="hours"><%= html_hours(format_hours(time_entry.hours)) %></td>
-      <td class="activity"><%= time_entry.activity %></td>
-      <td class="comments"><%= time_entry.comments %></td>
-    </tr>
+  <h3><%= l(:label_time_entry_plural) %></h3>
+  <% if @timesheet.time_entries.any? %>
+    <table class="list time-entries">
+      <thead>
+        <tr>
+          <th style="width: 100px;"><%= l(:field_spent_on) %></th>
+          <th style="width: 150px;"><%= l(:field_project) %></th>
+          <th style="width: 300px;"><%= l(:field_issue) %></th>
+          <th style="width: 80px;"><%= l(:field_hours) %></th>
+          <th style="width: 120px;"><%= l(:field_activity) %></th>
+          <th style="width: 200px;"><%= l(:field_comments) %></th>
+        </tr>
+      </thead>
+      <tbody>
+      <% @timesheet.time_entries.each do |time_entry| %>
+        <tr class="time-entry <%= cycle('odd', 'even') %>">
+          <td class="spent-on"><%= format_date(time_entry.spent_on) %></td>
+          <td class="project"><%= link_to_project(time_entry.project) %></td>
+          <td class="subject" style="word-wrap: break-word; max-width: 300px;">
+            <% if time_entry.issue %>
+              <%= link_to_issue(time_entry.issue, :truncate => 50) %>
+            <% end %>
+          </td>
+          <td class="hours"><%= html_hours(format_hours(time_entry.hours)) %></td>
+          <td class="activity"><%= time_entry.activity %></td>
+          <td class="comments" style="word-wrap: break-word; max-width: 200px;"><%= time_entry.comments %></td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="nodata"><%= l(:label_no_data) %></p>
   <% end %>
-  </tbody>
-</table>
 </div>
 
 <% if @timesheet.pending_approval? && User.current.allowed_to_globally?(:approve_time_entries) && @timesheet.can_approve?(User.current) %>
@@ -126,4 +139,34 @@
 </div>
 <% end %>
 
-<% html_title "#{l(:label_timesheet)} ##{@timesheet.id}: #{@timesheet.user.name}" %> 
+<% html_title "#{l(:label_timesheet)} ##{@timesheet.id}: #{@timesheet.user.name}" %>
+
+<style>
+  .time-entries {
+    table-layout: fixed;
+    width: 100%;
+  }
+  
+  .time-entries th,
+  .time-entries td {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    vertical-align: top;
+  }
+  
+  .time-entries .subject,
+  .time-entries .comments {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+  }
+  
+  .time-entries .hours {
+    text-align: center;
+  }
+  
+  .time-entries .spent-on {
+    text-align: center;
+  }
+</style> 

@@ -69,18 +69,18 @@ module MyHelper
   def block_select_tag(user)
     blocks_in_use = user.pref.my_page_layout.values.flatten
     options = content_tag('option')
-    
+
     block_options = Redmine::MyPage.block_options(blocks_in_use)
-    
+
     # Filter out the pending_timesheets block for users without approve_time_entries permission
     unless user.allowed_to?(:approve_time_entries, nil, :global => true)
       block_options.reject! { |label, block| block == 'pending_timesheets' }
     end
-    
+
     block_options.each do |label, block|
       options << content_tag('option', label, :value => block, :disabled => block.blank?)
     end
-    
+
     select_tag('block', options, :id => "block-select", :onchange => "$('#block-form').submit();")
   end
 
@@ -204,17 +204,122 @@ module MyHelper
       where("#{TimeEntry.table_name}.user_id <> ?", User.current.id).
       order("#{TimeEntry.table_name}.spent_on DESC").
       limit(10)
-      
+
     render :partial => 'my/blocks/pending_timesheets', :locals => {:entries => entries, :block => block}
   end
 
-  def render_my_pending_time_entries_block(block, settings)
-    # Find the user's time entries that are pending approval
-    entries = TimeEntry.pending_approval.
-      where(:user_id => User.current.id).
-      order("#{TimeEntry.table_name}.spent_on DESC").
-      limit(10)
-      
-    render :partial => 'my/blocks/my_pending_time_entries', :locals => {:entries => entries, :block => block}
+  def render_my_pending_timesheets_block(block, settings)
+    # Find the user's timesheets that are in draft or pending status
+    timesheets = Timesheet.where(user_id: User.current.id)
+                         .where(status: [Timesheet::STATUS_DRAFT, Timesheet::STATUS_PENDING])
+                         .order(start_date: :desc)
+                         .limit(10)
+
+    content = content_tag('h3',
+      link_to(l(:label_my_pending_timesheets, :scope => :timesheet), timesheets_path(:user_id => 'me', :status => [Timesheet::STATUS_DRAFT, Timesheet::STATUS_PENDING])) +
+      " (#{timesheets.count})"
+    )
+
+    if timesheets.any?
+      table = content_tag('table', :class => 'list timesheets') do
+        header = content_tag('thead',
+          content_tag('tr') do
+            content_tag('th', l(:field_week, :scope => :timesheet)) +
+            content_tag('th', l(:field_start_date, :scope => :timesheet)) +
+            content_tag('th', l(:field_end_date, :scope => :timesheet)) +
+            content_tag('th', l(:field_total_hours, :scope => :timesheet)) +
+            content_tag('th', l(:field_status, :scope => :timesheet))
+          end
+        )
+
+        rows = content_tag('tbody') do
+          timesheets.map do |timesheet|
+            content_tag('tr', {:class => timesheet.status, :data => {:id => timesheet.id}}) do
+              content_tag('td', timesheet.week_number, :class => 'week') +
+              content_tag('td', format_date(timesheet.start_date), :class => 'start-date') +
+              content_tag('td', format_date(timesheet.end_date), :class => 'end-date') +
+              content_tag('td', number_with_precision(timesheet.total_hours, precision: 2), :class => 'hours') +
+              content_tag('td',
+                content_tag('span',
+                  l(:"label_status_#{timesheet.status}", :scope => :timesheet),
+                  :class => "badge badge-#{timesheet.status == Timesheet::STATUS_DRAFT ? 'info' : 'warning'}"
+                ),
+                :class => 'status'
+              )
+            end
+          end.join.html_safe
+        end
+
+        header + rows
+      end
+      content += table
+
+      # Add JavaScript to make rows clickable
+      content += javascript_tag(<<-EOF
+        $(document).ready(function() {
+          $('.list.timesheets tbody tr').css('cursor', 'pointer').click(function() {
+            var id = $(this).data('id');
+            window.location = '#{timesheets_path}/' + id;
+          });
+        });
+      EOF
+                               )
+    else
+      content += content_tag('p', l(:label_no_data, :scope => :timesheet), :class => 'nodata')
+    end
+
+    content
+  end
+
+  def render_timesheets_pending_my_approval_block(block, settings)
+    # Find timesheets that need approval and the user has permission to approve
+    timesheets = Timesheet.joins(:time_entries => {:project => :members})
+                         .where("#{Member.table_name}.user_id = ?", User.current.id)
+                         .joins("INNER JOIN #{MemberRole.table_name} ON #{MemberRole.table_name}.member_id = #{Member.table_name}.id")
+                         .joins("INNER JOIN #{Role.table_name} ON #{Role.table_name}.id = #{MemberRole.table_name}.role_id")
+                         .where("#{Role.table_name}.permissions LIKE '%:approve_time_entries%'")
+                         .where("#{TimeEntry.table_name}.user_id <> ?", User.current.id)
+                         .where("#{TimeEntry.table_name}.status = ?", TimeEntry::STATUS_PENDING)
+                         .distinct
+                         .order("#{Timesheet.table_name}.start_date DESC")
+                         .limit(10)
+
+    content = content_tag('h3',
+      link_to(l(:label_timesheets_pending_my_approval, :scope => :timesheet), pending_approval_timesheets_path) +
+      " (#{timesheets.count})"
+    )
+
+    if timesheets.any?
+      table = content_tag('table', :class => 'list time-entries') do
+        header = content_tag('thead',
+          content_tag('tr') do
+            content_tag('th', l(:field_user, :scope => :timesheet)) +
+            content_tag('th', l(:field_start_date, :scope => :timesheet)) +
+            content_tag('th', l(:field_end_date, :scope => :timesheet)) +
+            content_tag('th', l(:field_total_hours, :scope => :timesheet)) +
+            content_tag('th', '')
+          end
+        )
+
+        rows = content_tag('tbody') do
+          timesheets.map do |timesheet|
+            content_tag('tr') do
+              content_tag('td', link_to_user(timesheet.user), :class => 'user') +
+              content_tag('td', format_date(timesheet.start_date), :class => 'start-date') +
+              content_tag('td', format_date(timesheet.end_date), :class => 'end-date') +
+              content_tag('td', number_with_precision(timesheet.total_hours, precision: 2), :class => 'hours') +
+              content_tag('td', link_to(l(:button_view), timesheet_path(timesheet), :class => 'icon icon-magnifier'), :class => 'buttons')
+            end
+          end.join.html_safe
+        end
+
+        header + rows
+      end
+      content += table
+    else
+      content += content_tag('p', l(:label_no_data, :scope => :timesheet), :class => 'nodata')
+    end
+
+    content
   end
 end

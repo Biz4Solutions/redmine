@@ -1,0 +1,201 @@
+<div class="contextual">
+  <% if @timesheets.any? %>
+    <%= link_to l(:label_approve_selected), '#', 
+                :onclick => "bulkApprove(); return false;",
+                :class => 'icon icon-checked',
+                :id => 'bulk-approve-link' %>
+    <%= link_to l(:label_reject_selected), '#', 
+                :onclick => "showModal('reject-dialog', '350px'); return false;",
+                :class => 'icon icon-cancel',
+                :id => 'bulk-reject-link' %>
+  <% end %>
+</div>
+
+<h2><%= l(:label_timesheets_for_approval, :scope => :timesheet) %></h2>
+
+<div class="tabs">
+  <ul>
+    <li><%= link_to l(:label_my_timesheets, :scope => :timesheet), timesheets_path %></li>
+    <li><%= link_to l(:label_timesheets_for_approval, :scope => :timesheet), for_approval_timesheets_path, :class => 'selected' %></li>
+  </ul>
+</div>
+
+<%= form_tag(for_approval_timesheets_path, :method => :get, :id => 'query_form') do %>
+<fieldset id="filters" class="collapsible">
+  <legend onclick="toggleFieldset(this);"><%= l(:label_filter_plural) %></legend>
+  <div>
+    <div class="filter">
+      <%= label_tag "user_id", l(:field_submitted_by, :scope => :timesheet) %>
+      <%= select_tag "user_id", 
+                     options_for_select([[l(:label_all), ""]] + 
+                                        User.active.sorted.map{|u| [u.name, u.id]},
+                                        params[:user_id]) %>
+    </div>
+    <div class="filter">
+      <%= label_tag "status", l(:field_status, :scope => :timesheet) %>
+      <%= select_tag "status", 
+                     options_for_select([[l(:label_all), ""]] + 
+                                        [[l(:label_pending_approval, :scope => :timesheet), Timesheet::STATUS_PENDING],
+                                         [l(:label_approved, :scope => :timesheet), Timesheet::STATUS_APPROVED],
+                                         [l(:label_rejected, :scope => :timesheet), Timesheet::STATUS_REJECTED]],
+                                        params[:status]) %>
+    </div>
+    <div class="filter">
+      <%= label_tag "start_date", l(:field_start_date, :scope => :timesheet) %>
+      <%= date_field_tag "start_date", params[:start_date] %>
+      <%= label_tag "end_date", l(:field_end_date, :scope => :timesheet) %>
+      <%= date_field_tag "end_date", params[:end_date] %>
+    </div>
+    <p class="buttons">
+      <%= submit_tag l(:button_apply), :name => nil %>
+      <%= link_to l(:button_clear), for_approval_timesheets_path, :class => 'icon icon-reload' %>
+    </p>
+  </div>
+</fieldset>
+<% end %>
+
+<div class="autoscroll">
+<table class="list timesheets">
+  <thead>
+    <tr>
+      <th class="checkbox"><%= check_box_tag 'check_all', '', false, :class => 'toggle-selection' %></th>
+      <th><%= l(:field_submitted_by, :scope => :timesheet) %></th>
+      <th><%= l(:field_week) %></th>
+      <th><%= l(:field_date_range) %></th>
+      <th><%= l(:field_hours, :scope => :timesheet) %></th>
+      <th><%= l(:field_status, :scope => :timesheet) %></th>
+      <th><%= l(:field_approved_by, :scope => :timesheet) %></th>
+      <th><%= l(:field_approved_on, :scope => :timesheet) %></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+  <% @timesheets.each do |timesheet| %>
+    <tr class="timesheet <%= cycle('odd', 'even') %> <%= timesheet.status %>">
+      <td class="checkbox"><%= check_box_tag 'ids[]', timesheet.id, false, :class => 'selection' %></td>
+      <td class="user"><%= link_to_user(timesheet.user) %></td>
+      <td class="week"><%= timesheet.week_number %></td>
+      <td class="date-range"><%= timesheet.date_range %></td>
+      <td class="hours"><%= html_hours(format_hours(timesheet.total_hours)) %></td>
+      <td class="status">
+        <% case timesheet.status %>
+        <% when Timesheet::STATUS_PENDING %>
+          <span class="badge badge-warning"><%= l(:label_pending_approval, :scope => :timesheet) %></span>
+        <% when Timesheet::STATUS_APPROVED %>
+          <span class="badge badge-success"><%= l(:label_approved, :scope => :timesheet) %></span>
+        <% when Timesheet::STATUS_REJECTED %>
+          <span class="badge badge-error"><%= l(:label_rejected, :scope => :timesheet) %></span>
+        <% end %>
+      </td>
+      <td class="approved-by">
+        <%= link_to_user(timesheet.approved_by) if timesheet.approved_by %>
+      </td>
+      <td class="approved-on">
+        <%= format_time(timesheet.approved_on) if timesheet.approved_on %>
+      </td>
+      <td class="buttons">
+        <%= link_to l(:button_view), timesheet_path(timesheet), :class => 'icon icon-magnifier' %>
+        <% if timesheet.pending_approval? && timesheet.can_approve?(User.current) %>
+          <%= link_to l(:label_approve), bulk_approve_timesheets_path(:ids => [timesheet.id]), 
+                      :method => :post, 
+                      :class => 'icon icon-checked' %>
+          <%= link_to l(:label_reject), '#', 
+                      :onclick => "showRejectDialog([#{timesheet.id}]); return false;",
+                      :class => 'icon icon-cancel' %>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+</div>
+
+<span class="pagination"><%= pagination_links_full @timesheet_pages, @timesheet_count %></span>
+
+<% if @timesheets.any? %>
+<div id="reject-dialog" style="display:none;">
+  <h3 class="title"><%= l(:label_rejection_reason) %></h3>
+  <%= form_tag bulk_reject_timesheets_path, :method => :post do %>
+    <div class="box">
+      <p>
+        <%= text_area_tag 'rejection_reason', nil, :cols => 60, :rows => 10, :class => 'wiki-edit', :required => true %>
+      </p>
+      <p>
+        <div id="reject-ids-container"></div>
+        <%= submit_tag l(:button_submit) %>
+        <%= link_to l(:button_cancel), '#', :onclick => "hideModal(this);", :class => 'button-small' %>
+      </p>
+    </div>
+  <% end %>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+  // Handle check all functionality
+  $('.toggle-selection').change(function() {
+    $('.selection').prop('checked', $(this).prop('checked'));
+    updateBulkActions();
+  });
+  
+  // Handle individual checkbox changes
+  $('.selection').change(function() {
+    updateBulkActions();
+  });
+  
+  // Update bulk actions based on selection
+  function updateBulkActions() {
+    var selectedCount = $('.selection:checked').length;
+    if (selectedCount > 0) {
+      $('#bulk-approve-link').show();
+      $('#bulk-reject-link').show();
+    } else {
+      $('#bulk-approve-link').hide();
+      $('#bulk-reject-link').hide();
+    }
+  }
+  
+  // Bulk approve function
+  window.bulkApprove = function() {
+    var selectedIds = [];
+    $('.selection:checked').each(function() {
+      selectedIds.push($(this).val());
+    });
+    
+    if (selectedIds.length > 0) {
+      if (confirm('<%= l(:text_are_you_sure, :scope => :timesheet) %>')) {
+        var form = $('<form method="post" action="<%= bulk_approve_timesheets_path %>"></form>');
+        selectedIds.forEach(function(id) {
+          form.append('<input type="hidden" name="ids[]" value="' + id + '">');
+        });
+        $('body').append(form);
+        form.submit();
+      }
+    }
+  };
+  
+  // Update reject dialog to include selected timesheet IDs
+  $('#bulk-reject-link').click(function() {
+    var selectedIds = [];
+    $('.selection:checked').each(function() {
+      selectedIds.push($(this).val());
+    });
+    showRejectDialog(selectedIds);
+  });
+  
+  // Function to show reject dialog with specific timesheet IDs
+  window.showRejectDialog = function(timesheetIds) {
+    // Clear previous IDs and add new ones
+    $('#reject-ids-container').empty();
+    timesheetIds.forEach(function(id) {
+      $('#reject-ids-container').append('<input type="hidden" name="ids[]" value="' + id + '">');
+    });
+    showModal('reject-dialog', '350px');
+  };
+  
+  // Initialize bulk actions
+  updateBulkActions();
+});
+</script>
+<% end %>
+
+<% html_title(l(:label_timesheets_for_approval, :scope => :timesheet)) %> 

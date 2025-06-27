@@ -1,8 +1,7 @@
-<h2><%= l(:label_timesheet_new) %></h2>
+<h2><%= l(:label_timesheet_new, :scope => :timesheet) %></h2>
 
 <%= form_for @timesheet do |f| %>
   <%= render :partial => 'form', :locals => { :f => f } %>
-  <%= submit_tag l(:button_create) %>
 <% end %>
 
-<% html_title l(:label_timesheet_new) %> 
+<% html_title l(:label_timesheet_new, :scope => :timesheet) %> 
