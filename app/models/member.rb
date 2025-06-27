@@ -311,7 +311,14 @@ class Member < ApplicationRecord
   def validate_allocation_percentage
     return if allocation_percentage.nil?
 
-    if allocation_percentage <= 0 || allocation_percentage > 100
+    # Basic range validation
+    if any_inherited_role?
+      # allow 0% allocation for inherited members
+      if allocation_percentage < 0 || allocation_percentage > 100
+        errors.add(:allocation_percentage, :invalid_range, message: "must be between 0 and 100")
+        return
+      end
+    elsif allocation_percentage <= 0 || allocation_percentage > 100
       errors.add(:allocation_percentage, :invalid_range, message: "must be between 0 and 100")
       return
     end
@@ -322,13 +329,18 @@ class Member < ApplicationRecord
     # Calculate total allocation for this user including this record
     date = Date.today
 
-    # Get all active allocations for this user except this one
-    other_allocations = self.class.where(user_id: user_id)
+    # Get all active allocations for this user except this one, excluding inherited members
+    other_allocations = self.class.joins(:member_roles)
+                            .where(user_id: user_id)
                             .where("(start_date IS NULL OR start_date <= ?)", date)
                             .where("(end_date IS NULL OR end_date >= ?)", date)
+                            .where(member_roles: { inherited_from: nil })
+                            .distinct
 
     # Exclude this record if it's being updated
     other_allocations = other_allocations.where.not(id: id) unless new_record?
+
+    Rails.logger.info "Other allocations: #{other_allocations.inspect} , this allocation_percentage: #{allocation_percentage}"
 
     # Sum up other allocations
     total_other_allocations = other_allocations.sum(:allocation_percentage) || 0
