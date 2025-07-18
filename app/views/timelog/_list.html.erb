@@ -11,18 +11,16 @@
     <% @query.inline_columns.each do |column| %>
       <%= column_header(@query, column) %>
     <% end %>
-    <% if User.current.allowed_to?(:approve_time_entries, @project, :global => true) %>
-      <th><%= l(:field_status) %></th>
-    <% end %>
+    
     <th></th>
   </tr>
 </thead>
 <tbody>
 <% grouped_query_results(entries, @query) do |entry, group_name, group_count, group_totals| -%>
-  <% if group_name %>
+      <% if group_name %>
     <% reset_cycle %>
     <tr class="group open">
-      <td colspan="<%= @query.inline_columns.size + (User.current.allowed_to?(:approve_time_entries, @project, :global => true) ? 3 : 2) %>">
+      <td colspan="<%= @query.inline_columns.size + 2 %>">
         <span class="expander icon icon-expanded" onclick="toggleRowGroup(this);"><%= sprite_icon("angle-down") %></span>
         <span class="name"><%= group_name %></span>
         <% if group_count %>
@@ -39,20 +37,7 @@
     <% @query.inline_columns.each do |column| %>
     <%= content_tag('td', column_content(column, entry), :class => column.css_classes) %>
     <% end %>
-    <% if User.current.allowed_to?(:approve_time_entries, @project, :global => true) %>
-      <td class="status">
-        <% if entry.pending_approval? %>
-          <span class="badge badge-warning"><%= l(:label_pending_approval) %></span>
-        <% elsif entry.approved? %>
-          <span class="badge badge-success"><%= l(:label_approved) %></span>
-        <% elsif entry.rejected? %>
-          <span class="badge badge-error"><%= l(:label_rejected) %></span>
-          <% if entry.rejection_reason.present? %>
-            <span class="icon icon-help" title="<%= h(entry.rejection_reason) %>"></span>
-          <% end %>
-        <% end %>
-      </td>
-    <% end %>
+    
     <td class="buttons">
     <% if entry.editable_by?(User.current) -%>
         <%= link_to sprite_icon('edit', l(:button_edit)), edit_time_entry_path(entry),
@@ -64,30 +49,7 @@
                     :title => l(:button_delete),
                     :class => 'icon-only icon-del' %>
     <% end -%>
-    <% if User.current.allowed_to?(:approve_time_entries, @project, :global => true) && entry.can_approve?(User.current) %>
-        <%= link_to sprite_icon('checked', l(:label_approve)), 
-                    approve_time_entry_path(entry),
-                    :method => :post,
-                    :title => l(:label_approve),
-                    :class => 'icon-only icon-checked' %>
-        <%= link_to sprite_icon('close', l(:label_reject)), 
-                    '#',
-                    :onclick => "showModal('reject-dialog-#{entry.id}', '330px'); return false;",
-                    :title => l(:label_reject),
-                    :class => 'icon-only icon-close' %>
-        <div id="reject-dialog-<%= entry.id %>" style="display:none;">
-          <h3 class="title"><%= l(:label_rejection_reason) %></h3>
-          <%= form_tag(reject_time_entry_path(entry), :method => :post) do %>
-            <p>
-              <%= text_area_tag 'rejection_reason', '', :rows => 5, :class => 'wiki-edit' %>
-            </p>
-            <p class="buttons">
-              <%= submit_tag l(:label_reject), :class => 'button-small button-negative' %>
-              <%= link_to l(:button_cancel), '#', :onclick => "hideModal(this); return false;", :class => 'button-small' %>
-            </p>
-          <% end %>
-        </div>
-    <% end %>
+
         <%= link_to_context_menu %>
     </td>
   </tr>
@@ -95,7 +57,7 @@
   <% @query.block_columns.each do |column|
        if (text = column_content(column, entry)) && text.present? -%>
   <tr class="<%= current_cycle %>">
-    <td colspan="<%= @query.inline_columns.size + (User.current.allowed_to?(:approve_time_entries, @project, :global => true) ? 2 : 1) %>" class="<%= column.css_classes %>">
+    <td colspan="<%= @query.inline_columns.size + 1 %>" class="<%= column.css_classes %>">
     <% if @query.block_columns.count > 1 %>
       <span><%= column.caption %></span>
     <% end %>
@@ -109,39 +71,5 @@
 </table>
 </div>
 <% end -%>
-
-<% if User.current.allowed_to?(:approve_time_entries, @project, :global => true) && entries.any? %>
-<div class="contextual">
-  <%= form_tag(bulk_approve_time_entries_path, :method => :post, :id => 'bulk-approve-form') do %>
-    <% entries.select { |e| e.can_approve?(User.current) }.each do |entry| %>
-      <%= hidden_field_tag 'ids[]', entry.id, :id => nil %>
-    <% end %>
-    <%= submit_tag l(:label_approve_selected), :name => nil, :onclick => "return confirm('#{l(:text_are_you_sure)}')", :class => 'button-small' %>
-  <% end %>
-  
-  <%= form_tag('#', :id => 'bulk-reject-form') do %>
-    <% entries.select { |e| e.can_approve?(User.current) }.each do |entry| %>
-      <%= hidden_field_tag 'ids[]', entry.id, :id => nil %>
-    <% end %>
-    <%= link_to l(:label_reject_selected), '#', :onclick => "showModal('bulk-reject-dialog', '330px'); return false;", :class => 'button-small button-negative' %>
-    
-    <div id="bulk-reject-dialog" style="display:none;">
-      <h3 class="title"><%= l(:label_rejection_reason) %></h3>
-      <%= form_tag(bulk_reject_time_entries_path, :method => :post) do %>
-        <% entries.select { |e| e.can_approve?(User.current) }.each do |entry| %>
-          <%= hidden_field_tag 'ids[]', entry.id, :id => nil %>
-        <% end %>
-        <p>
-          <%= text_area_tag 'rejection_reason', '', :rows => 5, :class => 'wiki-edit' %>
-        </p>
-        <p class="buttons">
-          <%= submit_tag l(:label_reject_selected), :class => 'button-small button-negative' %>
-          <%= link_to l(:button_cancel), '#', :onclick => "hideModal(this); return false;", :class => 'button-small' %>
-        </p>
-      <% end %>
-    </div>
-  <% end %>
-</div>
-<% end %>
 
 <%= context_menu %>

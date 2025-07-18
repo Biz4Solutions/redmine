@@ -670,6 +670,7 @@ class IssuesController < ApplicationController
          :time_entry => time_entry,
          :journal => @issue.current_journal}
       )
+
       if @issue.save
         call_hook(
           :controller_issues_edit_after_save,

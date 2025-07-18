@@ -33,8 +33,10 @@ module Redmine
       'calendar' => {:label => :label_calendar},
       'documents' => {:label => :label_document_plural},
       'timelog' => {:label => :label_spent_time},
-      'activity' => {:label => :label_activity},
-      'my_pending_time_entries' => {:label => :label_my_pending_time_entries}
+      'activity' => {:label => :label_activity}
+      # TIMESHEET_UI_DISABLED: Uncomment the lines below to re-enable timesheet blocks
+      # 'my_pending_time_entries' => {:label => :label_my_pending_time_entries},
+      # 'my_timesheets' => {:label => :label_my_timesheets}
     }
 
     def self.groups
@@ -44,12 +46,12 @@ module Redmine
     # Returns the available blocks
     def self.blocks
       blocks = CORE_BLOCKS.dup
-      
-      # Only add the pending_timesheets block for users with approve_time_entries permission
-      unless blocks.key?('pending_timesheets') || !User.current.allowed_to?(:approve_time_entries, nil, :global => true)
-        blocks['pending_timesheets'] = {:label => :label_pending_timesheets}
-      end
-      
+
+      # TIMESHEET_UI_DISABLED: Uncomment the lines below to re-enable pending timesheets block
+      # unless blocks.key?('pending_timesheets') || !User.current.allowed_to?(:approve_time_entries, nil, :global => true)
+      #   blocks['pending_timesheets'] = {:label => :label_pending_timesheets}
+      # end
+
       blocks.merge(additional_blocks).freeze
     end
 

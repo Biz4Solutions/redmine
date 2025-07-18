@@ -35,20 +35,7 @@
     </li>
   <% end %>
   
-  <% if User.current.allowed_to?(:approve_time_entries, @project || @projects) %>
-    <% can_approve = @time_entries.any? { |entry| entry.can_approve?(User.current) } %>
-    <li>
-      <%= context_menu_link sprite_icon('checked', l(:label_approve)), 
-                          {:controller => 'timelog', :action => 'bulk_approve', :ids => @time_entries.collect(&:id), :back_url => @back},
-                          :method => :post, :class => 'icon icon-checked', :disabled => !can_approve %>
-    </li>
-    <li>
-      <%= context_menu_link sprite_icon('close', l(:label_reject)), 
-                          '#',
-                          :onclick => "showModal('bulk-reject-dialog', '330px'); return false;", 
-                          :class => 'icon icon-close', :disabled => !can_approve %>
-    </li>
-  <% end %>
+  
 
   <%= call_hook(:view_time_entries_context_menu_end, {:time_entries => @time_entries, :can => @can, :back => @back }) %>
 

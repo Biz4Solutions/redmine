@@ -70,7 +70,7 @@ if File.exist?(database_file)
     adapters.each do |adapter|
       case adapter.strip
       when /mysql2/
-        gem 'mysql2', '~> 0.5.0'
+        gem 'mysql2', '~> 0.5.6'
         gem "with_advisory_lock"
       when /postgresql/
         gem 'pg', '~> 1.5.3'
