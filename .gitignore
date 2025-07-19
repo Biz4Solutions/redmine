@@ -11,6 +11,8 @@
 /config/database.yml
 /config/email.yml
 /config/secrets.yml
+/config/credentials.yml.enc
+/config/master.key
 /config/s3.yml
 /config/initializers/session_store.rb
 /config/initializers/secret_token.rb
