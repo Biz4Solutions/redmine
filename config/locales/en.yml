@@ -156,15 +156,14 @@ en:
             notice_time_entry_deleted: "Time entry was successfully deleted"
             notice_time_entry_updated: "Time entry was successfully updated"
             notice_timesheet_submitted: "Timesheet was successfully submitted"
-            notice_timesheet_approved: "Timesheet was successfully approved"
-            notice_timesheet_rejected: "Timesheet was successfully rejected"
+
             notice_timesheet_resubmitted: "Timesheet was successfully resubmitted"
             notice_successful_create: "Successfully created"
             notice_successful_update: "Successfully updated"
             notice_successful_delete: "Successfully deleted"
-            notice_timesheets_submitted: "%{count} timesheet(s) were successfully submitted"
-            notice_timesheets_approved: "%{count} timesheet(s) were successfully approved"
-            notice_timesheets_rejected: "%{count} timesheet(s) were successfully rejected"
+    notice_timesheets_submitted: "%{count} timesheet(s) were successfully submitted"
+    notice_timesheets_approved: "%{count} timesheet(s) were successfully approved"
+    notice_timesheets_rejected: "%{count} timesheet(s) were successfully rejected"
 
   actionview_instancetag_blank_option: Please select
 
@@ -625,6 +624,7 @@ en:
   permission_manage_related_issues: Manage related issues
   permission_import_issues: Import issues
   permission_log_time_for_other_users: Log spent time for other users
+  permission_approve_time_entries: "Approve time entries"
   permission_approve_all_time_entries: Approve all time entries
 
   project_module_issue_tracking: Issue tracking
@@ -1179,6 +1179,8 @@ en:
   label_edited: Edited
   label_time_by_author: "%{time} by %{author}"
   label_involved_principals: Author / Previous assignee
+  label_active_allocations: Active Allocations
+  label_past_allocations: Past Allocations
 
   button_login: Login
   button_submit: Submit
@@ -1492,7 +1494,9 @@ en:
   field_week: "Week"
   field_date_range: "Date Range"
   
-  permission_approve_time_entries: "Approve time entries"
+  
+  
+  error_spent_time_read_only_use_timesheets: "Time entry creation and editing through the 'Spent Time' tab has been restricted to Manager and Administrator roles only. Please use the 'Timesheets' functionality for time entry management."
   
   # Timesheet-specific translations
   timesheet:
@@ -1512,8 +1516,9 @@ en:
     label_new_time_entry: "New Time Entry"
     label_edit_time_entry: "Edit Time Entry"
     label_pending_submission: "Pending Timesheets"
+    label_timesheets_pending_my_approval: "Timesheets Pending My Approval"
     label_my_pending_timesheets: "My Pending Timesheets"
-    label_timesheets_pending_my_approval: "Timesheets Pending for approval"
+    label_timesheets_for_approval: "Timesheets for Approval"
     label_pending_timesheet: "Pending Timesheet"
     label_pending_timesheet_plural: "Pending Timesheets"
     label_pending_time_entry: "Pending Time Entry"
@@ -1522,7 +1527,7 @@ en:
     label_pending_timesheets: "Pending Timesheets"
     label_draft: "Draft"
     label_my_timesheets: "My Timesheets"
-    label_timesheets_for_approval: "Timesheets for Approval"
+
     label_resubmit_for_approval: "Resubmit for Approval"
     label_previously_rejected: "Previously Rejected"
     
@@ -1585,6 +1590,8 @@ en:
     error_exceeds_allocation_percentage: "Time entry exceeds project allocation percentage"
     error_spent_on_out_of_range: "The date must be within the timesheet's date range"
     error_spent_on_outside_timesheet_range: "The date must be within the timesheet's date range"
+    error_hours_exceeds_24: "Hours cannot exceed 24 hours per entry"
+    error_daily_hours_exceed_24: "Total daily hours exceed 24. You have %{logged_hours} already logged, adding %{current_hours} would total %{total_hours}."
     error_cannot_delete_time_entry: "Cannot delete time entry"
     error_cannot_edit_time_entry: "Cannot edit time entry"
     error_cannot_submit_timesheet: "Cannot submit timesheet"
@@ -1595,13 +1602,11 @@ en:
     notice_time_entry_deleted: "Time entry was successfully deleted"
     notice_time_entry_updated: "Time entry was successfully updated"
     notice_timesheet_submitted: "Timesheet was successfully submitted"
-    notice_timesheet_approved: "Timesheet was successfully approved"
-    notice_timesheet_rejected: "Timesheet was successfully rejected"
+
     notice_timesheet_resubmitted: "Timesheet was successfully resubmitted"
     notice_successful_create: "Successfully created"
     notice_successful_update: "Successfully updated"
     notice_successful_delete: "Successfully deleted"
     notice_timesheets_submitted: "%{count} timesheet(s) were successfully submitted"
-    notice_timesheets_approved: "%{count} timesheet(s) were successfully approved"
-    notice_timesheets_rejected: "%{count} timesheet(s) were successfully rejected"
+
 

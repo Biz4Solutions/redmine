@@ -1,11 +1,11 @@
 class TimesheetsController < ApplicationController
   before_action :require_login
   before_action :authorize_timesheets,
-:only => [:index, :show, :new, :create, :edit, :update, :destroy, :submit, :approve, :reject, :add_time_entry, :remove_time_entry, :bulk_submit, :bulk_approve, :bulk_reject, :pending_approval,
+:only => [:index, :show, :new, :create, :edit, :update, :destroy, :submit, :approve, :reject, :add_time_entry, :remove_time_entry, :edit_time_entry, :update_time_entry, :bulk_submit, :bulk_approve, :bulk_reject, :pending_approval,
           :for_approval]
-  before_action :find_timesheet, :only => [:show, :edit, :update, :destroy, :submit, :approve, :reject, :add_time_entry, :remove_time_entry]
+  before_action :find_timesheet, :only => [:show, :edit, :update, :destroy, :submit, :approve, :reject, :add_time_entry, :remove_time_entry, :edit_time_entry, :update_time_entry]
   before_action :find_timesheets, only: [:bulk_submit, :bulk_approve, :bulk_reject]
-  before_action :check_editability, only: [:edit, :update, :destroy]
+  before_action :check_editability, only: [:edit, :update, :destroy, :add_time_entry, :remove_time_entry, :edit_time_entry, :update_time_entry]
   before_action :check_approval_permission, only: [:approve, :reject, :bulk_approve, :bulk_reject, :for_approval]
 
   helper :timelog
@@ -67,7 +67,7 @@ class TimesheetsController < ApplicationController
       end
 
       flash[:notice] = l(:notice_successful_create, :scope => :timesheet)
-      redirect_to timesheets_path
+      redirect_to edit_timesheet_path(@timesheet)
     else
       @projects = User.current.memberships.map(&:project).select(&:active?).select { |p| User.current.allowed_to?(:log_time, p) }
       render :new
@@ -88,8 +88,13 @@ class TimesheetsController < ApplicationController
         else
           flash[:error] = @time_entry.errors.full_messages.join(", ")
         end
+
+        # When adding time entry, stay on the edit page
+        redirect_to edit_timesheet_path(@timesheet)
+        return
       end
 
+      # Only when saving (not adding), go back to list
       flash[:notice] = l(:notice_successful_update, :scope => :timesheet)
       redirect_to timesheets_path
     else
@@ -159,6 +164,25 @@ class TimesheetsController < ApplicationController
     end
 
     redirect_to edit_timesheet_path(@timesheet)
+  end
+
+  def edit_time_entry
+    @time_entry = @timesheet.time_entries.find(params[:time_entry_id])
+    @projects = User.current.memberships.map(&:project).select(&:active?).select { |p| User.current.allowed_to?(:log_time, p) }
+    render :edit_time_entry
+  end
+
+  def update_time_entry
+    @time_entry = @timesheet.time_entries.find(params[:time_entry_id])
+
+    if @time_entry.update(time_entry_params)
+      flash[:notice] = l(:notice_successful_update)
+      redirect_to edit_timesheet_path(@timesheet)
+    else
+      @projects = User.current.memberships.map(&:project).select(&:active?).select { |p| User.current.allowed_to?(:log_time, p) }
+      flash[:error] = @time_entry.errors.full_messages.join(", ")
+      render :edit_time_entry
+    end
   end
 
   def bulk_submit

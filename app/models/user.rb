@@ -840,6 +840,36 @@ class User < Principal
     self.pref.notify_about_high_priority_issues
   end
 
+  # Returns true if the user has Manager or Administrator role privileges
+  # This includes roles that inherit from Manager or Administrator roles
+  def has_manager_or_admin_role_privileges?(project = nil)
+    return true if admin?
+
+    # Get roles for the project or all roles if no project specified
+    user_roles = if project
+                   roles_for_project(project)
+                 else
+                   roles.to_a
+                 end
+
+    # Check if any role is Manager, Administrator, or inherits from them
+    user_roles.any? do |role|
+      Rails.logger.info "Role: #{role.name}"
+      Rails.logger.info "Role: #{is_manager_or_admin_role?(role)}"
+      is_manager_or_admin_role?(role)
+    end
+  end
+
+  # Class method to configure which roles should be considered Manager/Admin
+  # This allows for easy customization per installation
+  def self.manager_admin_role_names
+    @manager_admin_role_names ||= ['Manager', 'Administrator', 'Admin', 'Project Manager', 'System Admin']
+  end
+
+  class << self
+    attr_writer :manager_admin_role_names
+  end
+
   class CurrentUser < ActiveSupport::CurrentAttributes
     attribute :user
   end
@@ -915,6 +945,21 @@ class User < Principal
   end
 
   private
+
+  # Returns true if the role is Manager, Administrator, or inherits from them
+  def is_manager_or_admin_role?(role)
+    # Check against configured role names (exact match, case insensitive)
+    return true if User.manager_admin_role_names.any? { |name| role.name.casecmp(name) == 0 }
+
+    # Check role name contains key terms (fallback)
+    role_name = role.name.downcase
+    return true if role_name.include?('manager') || role_name.include?('administrator') || role_name.include?('admin')
+
+    # Check if role manages other roles (very strong indicator)
+    return true if role.managed_roles.any?
+
+    false
+  end
 
   def generate_password_if_needed
     if generate_password? && auth_source.nil?

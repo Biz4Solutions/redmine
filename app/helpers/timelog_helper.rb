@@ -29,13 +29,8 @@ module TimelogHelper
     activities = TimeEntryActivity.available_activities(project)
 
     collection = []
-    if time_entry && time_entry.activity && !time_entry.activity.active?
-      collection << ["--- #{l(:actionview_instancetag_blank_option)} ---", '']
-    else
-      unless activities.detect(&:is_default)
-        collection << ["--- #{l(:actionview_instancetag_blank_option)} ---", '']
-      end
-    end
+    # Always include blank option to force conscious activity selection
+    collection << ["--- #{l(:actionview_instancetag_blank_option)} ---", '']
     activities.each {|a| collection << [a.name, a.id]}
     collection
   end
@@ -52,7 +47,8 @@ module TimelogHelper
     if @project
       time_entry.activity_id
     else
-      TimeEntryActivity.default_activity_id(User.current, time_entry.project)
+      # Force user to consciously select activity - no default
+      nil
     end
   end
 

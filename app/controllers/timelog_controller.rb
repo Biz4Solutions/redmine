@@ -20,18 +20,17 @@
 class TimelogController < ApplicationController
   menu_item :time_entries
 
-  before_action :find_time_entry, :only => [:show, :edit, :update, :approve, :reject, :submit]
+  before_action :find_time_entry, :only => [:show, :edit, :update]
   before_action :check_editability, :only => [:edit, :update]
-  before_action :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy, :bulk_approve, :bulk_reject, :bulk_submit]
-  before_action :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy, :approve, :reject, :bulk_approve, :bulk_reject, :submit]
-  before_action :check_approval_permission, :only => [:approve, :reject, :bulk_approve, :bulk_reject]
-  before_action :check_log_time_permission, :only => [:submit]
+  before_action :find_time_entries, :only => [:bulk_edit, :bulk_update, :destroy]
+  before_action :authorize, :only => [:show, :edit, :update, :bulk_edit, :bulk_update, :destroy]
+  before_action :check_spent_time_read_only_access, :only => [:new, :create, :edit, :update, :destroy, :bulk_edit, :bulk_update]
 
   before_action :find_optional_issue, :only => [:new, :create]
   before_action :find_optional_project, :only => [:index, :report]
 
   accept_atom_auth :index
-  accept_api_auth :index, :show, :create, :update, :destroy, :approve, :reject
+  accept_api_auth :index, :show, :create, :update, :destroy
 
   rescue_from Query::StatementInvalid, :with => :query_statement_invalid
   rescue_from Query::QueryError, :with => :query_error
@@ -44,47 +43,61 @@ class TimelogController < ApplicationController
   include QueriesHelper
 
   def index
-    retrieve_time_entry_query
-    scope = time_entry_scope.
-      preload(:issue => [:project, :tracker, :status, :assigned_to, :priority]).
-      preload(:project, :user)
+    # Performance monitoring wrapper
+    Redmine::PerformanceLogger.log_time_entry_query('time_entries_index', User.current) do
+      retrieve_time_entry_query
 
-    respond_to do |format|
-      format.html do
-        @entry_count = scope.count
-        @entry_pages = Paginator.new @entry_count, per_page_option, params['page']
-        @entries = scope.offset(@entry_pages.offset).limit(@entry_pages.per_page).to_a
+      # Performance optimization: Get count separately to avoid complex joins in count query
+      @entry_count = time_entry_scope.select('time_entries.id').count
+      @entry_pages = Paginator.new @entry_count, per_page_option, params['page']
 
-        render :layout => !request.xhr?
-      end
-      format.api do
-        @entry_count = scope.count
-        @offset, @limit = api_offset_and_limit
-        @entries = scope.offset(@offset).limit(@limit).preload(:custom_values => :custom_field).to_a
-      end
-      format.atom do
-        entries = scope.limit(Setting.feeds_limit.to_i).reorder("#{TimeEntry.table_name}.created_on DESC").to_a
-        render_feed(entries, :title => l(:label_spent_time))
-      end
-      format.csv do
-        # Export all entries
-        entries = scope.to_a
-        send_data(query_to_csv(entries, @query, params), :type => 'text/csv; header=present', :filename => "#{filename_for_export(@query, 'timelog')}.csv")
+      # Performance optimization: More efficient preloading
+      scope = time_entry_scope.
+        includes(:project, :user, :activity).
+        includes(:issue => [:project, :tracker, :status, :assigned_to, :priority]).
+        offset(@entry_pages.offset).
+        limit(@entry_pages.per_page)
+
+      respond_to do |format|
+        format.html do
+          @entries = scope.to_a
+          render :layout => !request.xhr?
+        end
+        format.api do
+          @offset, @limit = api_offset_and_limit
+          @entries = time_entry_scope.
+            includes(:project, :user, :activity).
+            includes(:issue => [:project, :tracker, :status]).
+            includes(:custom_values => :custom_field).
+            offset(@offset).limit(@limit).to_a
+        end
+        format.atom do
+          entries = scope.limit(Setting.feeds_limit.to_i).reorder("#{TimeEntry.table_name}.created_on DESC").to_a
+          render_feed(entries, :title => l(:label_spent_time))
+        end
+        format.csv do
+          # Export all entries
+          entries = time_entry_scope.includes(:project, :user, :activity, :issue).to_a
+          send_data(query_to_csv(entries, @query, params), :type => 'text/csv; header=present', :filename => "#{filename_for_export(@query, 'timelog')}.csv")
+        end
       end
     end
   end
 
   def report
-    retrieve_time_entry_query
-    scope = time_entry_scope
+    # Performance monitoring wrapper
+    Redmine::PerformanceLogger.log_time_entry_query('time_entries_report', User.current) do
+      retrieve_time_entry_query
+      scope = time_entry_scope
 
-    @report = Redmine::Helpers::TimeReport.new(@project, params[:criteria], params[:columns], scope)
+      @report = Redmine::Helpers::TimeReport.new(@project, params[:criteria], params[:columns], scope)
 
-    respond_to do |format|
-      format.html {render :layout => !request.xhr?}
-      format.csv do
-        send_data(report_to_csv(@report), :type => 'text/csv; header=present',
-                  :filename => 'timelog.csv')
+      respond_to do |format|
+        format.html {render :layout => !request.xhr?}
+        format.csv do
+          send_data(report_to_csv(@report), :type => 'text/csv; header=present',
+                    :filename => 'timelog.csv')
+        end
       end
     end
   end
@@ -259,130 +272,6 @@ class TimelogController < ApplicationController
     end
   end
 
-  def approve
-    if @time_entry.approve(User.current)
-      respond_to do |format|
-        format.html do
-          flash[:notice] = l(:notice_time_entry_approved)
-          redirect_back_or_default project_time_entries_path(@time_entry.project)
-        end
-        format.api { render_api_ok }
-      end
-    else
-      respond_to do |format|
-        format.html do
-          flash[:error] = @time_entry.errors.full_messages.join(", ")
-          redirect_back_or_default project_time_entries_path(@time_entry.project)
-        end
-        format.api { render_validation_errors(@time_entry) }
-      end
-    end
-  end
-
-  def reject
-    rejection_reason = params[:rejection_reason]
-    if @time_entry.reject(User.current, rejection_reason)
-      respond_to do |format|
-        format.html do
-          flash[:notice] = l(:notice_time_entry_rejected)
-          redirect_back_or_default project_time_entries_path(@time_entry.project)
-        end
-        format.api { render_api_ok }
-      end
-    else
-      respond_to do |format|
-        format.html do
-          flash[:error] = @time_entry.errors.full_messages.join(", ")
-          redirect_back_or_default project_time_entries_path(@time_entry.project)
-        end
-        format.api { render_validation_errors(@time_entry) }
-      end
-    end
-  end
-
-  def bulk_approve
-    approved_count = 0
-
-    @time_entries.each do |time_entry|
-      if time_entry.can_approve?(User.current) && time_entry.approve(User.current)
-        approved_count += 1
-      end
-    end
-
-    respond_to do |format|
-      format.html do
-        flash[:notice] = l(:notice_time_entries_approved, :count => approved_count)
-        redirect_back_or_default project_time_entries_path(@projects.first)
-      end
-      format.api { render_api_ok }
-    end
-  end
-
-  def bulk_reject
-    rejection_reason = params[:rejection_reason]
-
-    if rejection_reason.blank?
-      flash[:error] = l(:error_rejection_reason_required)
-      redirect_back_or_default project_time_entries_path(@projects.first)
-      return
-    end
-
-    rejected_count = 0
-
-    @time_entries.each do |time_entry|
-      if time_entry.can_approve?(User.current) && time_entry.reject(User.current, rejection_reason)
-        rejected_count += 1
-      end
-    end
-
-    respond_to do |format|
-      format.html do
-        flash[:notice] = l(:notice_time_entries_rejected, :count => rejected_count)
-        redirect_back_or_default project_time_entries_path(@projects.first)
-      end
-      format.api { render_api_ok }
-    end
-  end
-
-  # Submit a time entry for approval
-  def submit
-    find_time_entry
-
-    if @time_entry.user_id != User.current.id
-      flash[:error] = l(:error_not_your_time_entry)
-      redirect_back_or_default project_time_entries_path(@project)
-      return
-    end
-
-    if @time_entry.status != TimeEntry::STATUS_PENDING
-      flash[:error] = l(:error_time_entry_already_submitted)
-      redirect_back_or_default project_time_entries_path(@project)
-      return
-    end
-
-    # Time entry is already in pending status, so we just need to notify approvers
-    Mailer.deliver_time_entry_pending_approval(@time_entry)
-
-    flash[:notice] = l(:notice_time_entry_submitted)
-    redirect_back_or_default project_time_entries_path(@project)
-  end
-
-  # Submit multiple time entries for approval
-  def bulk_submit
-    submitted_count = 0
-
-    @time_entries.each do |time_entry|
-      if time_entry.user_id == User.current.id && time_entry.status == TimeEntry::STATUS_PENDING
-        # Time entry is already in pending status, so we just need to notify approvers
-        Mailer.deliver_time_entry_pending_approval(time_entry)
-        submitted_count += 1
-      end
-    end
-
-    flash[:notice] = l(:notice_time_entries_submitted, :count => submitted_count)
-    redirect_back_or_default time_entries_path
-  end
-
   def get_activities
     @project = Project.find(params[:project_id])
     @activities = @project.activities
@@ -443,17 +332,21 @@ class TimelogController < ApplicationController
     super
   end
 
-  def check_approval_permission
-    unless User.current.allowed_to?(:approve_time_entries, @project || @projects)
-      deny_access
-      return false
-    end
-  end
+  def check_spent_time_read_only_access
+    # Allow regular users to log time from issue pages
+    return true if params[:issue_id].present?
 
-  def check_log_time_permission
-    unless User.current.allowed_to?(:log_time, @project || @projects)
-      deny_access
+    # Spent Time tab is now read-only - only Manager and Administrator roles can create/edit/delete time entries
+    # All time entry modifications should be done through Timesheets
+    unless User.current.has_manager_or_admin_role_privileges?(@project)
+      flash[:error] = l(:error_spent_time_read_only_use_timesheets)
+      if @project
+        redirect_to timesheets_path(:project_id => @project.id)
+      else
+        redirect_to timesheets_path
+      end
       return false
     end
+    true
   end
 end

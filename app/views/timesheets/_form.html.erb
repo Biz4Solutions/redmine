@@ -54,7 +54,7 @@
               <th style="width: 80px;"><%= l(:field_hours, :scope => :timesheet) %></th>
               <th style="width: 120px;"><%= l(:field_activity, :scope => :timesheet) %></th>
               <th style="width: 200px;"><%= l(:field_comments, :scope => :timesheet) %></th>
-              <th style="width: 80px;"></th>
+              <th style="width: 120px;"><%= l(:label_actions) %></th>
             </tr>
           </thead>
           <tbody>
@@ -67,11 +67,21 @@
                 <td><%= entry.activity %></td>
                 <td style="word-wrap: break-word; max-width: 200px;"><%= entry.comments %></td>
                 <td class="buttons">
-                  <%= link_to l(:button_delete, :scope => :timesheet), 
-                      remove_time_entry_timesheet_path(@timesheet, :time_entry_id => entry.id),
-                      :method => :delete,
-                      :data => { :confirm => l(:text_are_you_sure, :scope => :timesheet) },
-                      :class => 'icon icon-del' %>
+                  <% if @timesheet.status == Timesheet::STATUS_DRAFT %>
+                    <%= link_to l(:button_edit, :scope => :timesheet), 
+                        edit_time_entry_timesheet_path(@timesheet, :time_entry_id => entry.id),
+                        :class => 'icon icon-edit',
+                        :title => l(:label_edit_time_entry, :scope => :timesheet),
+                        :style => 'margin-right: 8px;' %>
+                    <%= link_to l(:button_delete, :scope => :timesheet), 
+                        remove_time_entry_timesheet_path(@timesheet, :time_entry_id => entry.id),
+                        :method => :delete,
+                        :data => { :confirm => l(:text_are_you_sure, :scope => :timesheet) },
+                        :class => 'icon icon-del',
+                        :title => l(:button_delete, :scope => :timesheet) %>
+                  <% else %>
+                    <span class="disabled">-</span>
+                  <% end %>
                 </td>
               </tr>
             <% end %>
@@ -112,12 +122,23 @@
     .time-entries .spent-on {
       text-align: center;
     }
+    
+    .time-entries .buttons {
+      text-align: center;
+      white-space: nowrap;
+    }
+    
+    .time-entries .buttons a {
+      display: inline-block;
+      margin: 0 2px;
+    }
   </style>
 <% end %>
 
 <script type="text/javascript">
   // Add date validation for spent_on field
   function validateSpentOnDate(date) {
+    <% if @timesheet.persisted? %>
     var startDate = new Date('<%= @timesheet.start_date.to_s %>');
     var endDate = new Date('<%= @timesheet.end_date.to_s %>');
     var selectedDate = new Date(date);
@@ -126,16 +147,158 @@
       alert('<%= l(:error_spent_on_outside_timesheet_range, :scope => :timesheet) %>');
       return false;
     }
+    <% end %>
     return true;
+  }
+
+  // Auto-populate end date and restrict start date to Mondays only
+  function setupTimesheetDateHandling() {
+    var startDateField = document.getElementById('timesheet_start_date');
+    var endDateField = document.getElementById('timesheet_end_date');
+    
+    if (startDateField && endDateField) {
+      // Create a wrapper for custom date picker
+      var wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+      wrapper.style.display = 'inline-block';
+      
+      startDateField.parentNode.insertBefore(wrapper, startDateField);
+      wrapper.appendChild(startDateField);
+      
+      // Style the date field to indicate Monday-only restriction
+      startDateField.style.cursor = 'pointer';
+      startDateField.title = 'Click to select a Monday for your timesheet week';
+      
+      // Add help text
+      var helpText = document.createElement('small');
+      helpText.style.color = '#666';
+      helpText.style.fontSize = '0.9em';
+      helpText.style.display = 'block';
+      helpText.style.marginTop = '4px';
+      helpText.innerHTML = '<strong>Note:</strong> Only Mondays are available. Your timesheet will automatically span Monday to Sunday.';
+      wrapper.parentNode.appendChild(helpText);
+
+      // Auto-populate end date and validate Monday selection
+      startDateField.addEventListener('change', function(e) {
+        if (e.target.value) {
+          var startDate = new Date(e.target.value);
+          
+          // Check if selected date is Monday (1)
+          if (startDate.getDay() !== 1) {
+            // Find the next Monday
+            var nextMonday = new Date(startDate);
+            var daysUntilMonday = (8 - startDate.getDay()) % 7;
+            if (daysUntilMonday === 0) daysUntilMonday = 7;
+            nextMonday.setDate(startDate.getDate() + daysUntilMonday);
+            
+            // Find the previous Monday
+            var prevMonday = new Date(startDate);
+            var daysSincePrevMonday = startDate.getDay() === 0 ? 1 : startDate.getDay() - 1;
+            prevMonday.setDate(startDate.getDate() - daysSincePrevMonday);
+            
+            // Format dates for display
+            var nextMondayStr = nextMonday.toLocaleDateString();
+            var prevMondayStr = prevMonday.toLocaleDateString();
+            var formattedNext = nextMonday.getFullYear() + '-' + 
+                              String(nextMonday.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(nextMonday.getDate()).padStart(2, '0');
+            var formattedPrev = prevMonday.getFullYear() + '-' + 
+                              String(prevMonday.getMonth() + 1).padStart(2, '0') + '-' + 
+                              String(prevMonday.getDate()).padStart(2, '0');
+            
+            // Show options to user
+            var message = 'Only Mondays can be selected for timesheet start dates.\n\n' +
+                         'Would you like to use:\n' +
+                         '• Previous Monday: ' + prevMondayStr + '\n' +
+                         '• Next Monday: ' + nextMondayStr + '\n\n' +
+                         'Click OK for next Monday, Cancel for previous Monday.';
+            
+            if (confirm(message)) {
+              e.target.value = formattedNext;
+            } else {
+              e.target.value = formattedPrev;
+            }
+            
+            // Trigger change event to populate end date
+            var changeEvent = new Event('change');
+            setTimeout(function() {
+              e.target.dispatchEvent(changeEvent);
+            }, 10);
+            return;
+          }
+          
+          // Calculate end date (6 days after start date = Sunday)
+          var endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 6);
+          
+          // Format date as YYYY-MM-DD for input field
+          var formattedEndDate = endDate.getFullYear() + '-' + 
+                               String(endDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(endDate.getDate()).padStart(2, '0');
+          
+          endDateField.value = formattedEndDate;
+          
+          // Add visual feedback that end date was auto-populated
+          endDateField.style.backgroundColor = '#e8f5e8';
+          setTimeout(function() {
+            endDateField.style.backgroundColor = '';
+          }, 1000);
+          
+        } else {
+          endDateField.value = '';
+        }
+      });
+
+      // Prevent manual typing of invalid dates
+      startDateField.addEventListener('blur', function(e) {
+        if (e.target.value) {
+          var selectedDate = new Date(e.target.value);
+          if (selectedDate.getDay() !== 1) {
+            // Clear the field if it's not a Monday
+            e.target.value = '';
+            endDateField.value = '';
+            
+            // Show a subtle message
+            var notice = document.createElement('div');
+            notice.style.cssText = 'position:absolute;top:100%;left:0;background:#fff3cd;border:1px solid #ffeaa7;padding:8px 12px;border-radius:4px;font-size:12px;color:#856404;margin-top:4px;z-index:1000;box-shadow:0 2px 4px rgba(0,0,0,0.1)';
+            notice.textContent = 'Please select a Monday using the date picker';
+            wrapper.appendChild(notice);
+            
+            setTimeout(function() {
+              if (notice.parentNode) {
+                notice.parentNode.removeChild(notice);
+              }
+            }, 3000);
+          }
+        }
+      });
+
+      // Style the field to indicate restriction
+      startDateField.addEventListener('focus', function(e) {
+        e.target.style.borderColor = '#007cba';
+        e.target.style.boxShadow = '0 0 4px rgba(0, 124, 186, 0.3)';
+      });
+
+      startDateField.addEventListener('blur', function(e) {
+        e.target.style.borderColor = '';
+        e.target.style.boxShadow = '';
+      });
+    }
   }
 
   // Add validation before form submission
   document.addEventListener('DOMContentLoaded', function() {
+    // Setup timesheet date handling for new timesheets
+    <% if @timesheet.new_record? %>
+    setupTimesheetDateHandling();
+    <% end %>
+    
+    // Setup time entry validation for existing timesheets
     var form = document.querySelector('#log_time form');
     if (form) {
       form.addEventListener('submit', function(e) {
         var spentOnField = document.querySelector('#time_entry_spent_on');
-        if (!validateSpentOnDate(spentOnField.value)) {
+        if (spentOnField && !validateSpentOnDate(spentOnField.value)) {
           e.preventDefault();
         }
       });

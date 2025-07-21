@@ -1,0 +1,12 @@
+<h2><%= l(:label_edit_time_entry, :scope => :timesheet) %></h2>
+
+<%= form_with model: [@timesheet, @time_entry], url: update_time_entry_timesheet_path(@timesheet, time_entry_id: @time_entry.id), method: :patch, local: true do |form| %>
+  <%= render :partial => 'time_entry_form', :locals => { :f => form, :time_entry => @time_entry, :projects => @projects } %>
+  
+  <p class="buttons">
+    <%= form.submit l(:button_save, :scope => :timesheet), :class => 'button' %>
+    <%= link_to l(:button_cancel, :scope => :timesheet), edit_timesheet_path(@timesheet), :class => 'button' %>
+  </p>
+<% end %>
+
+<% html_title l(:label_edit_time_entry, :scope => :timesheet) %> 

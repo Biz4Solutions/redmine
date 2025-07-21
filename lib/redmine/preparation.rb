@@ -96,8 +96,8 @@ module Redmine
                          :require => :member
           map.permission :log_time_for_other_users, :require => :member
           map.permission :import_time_entries, {:timelog_imports => [:new, :create, :show, :settings, :mapping, :run]}, :require => :member
-          map.permission :approve_time_entries, {:timelog => [:approve, :reject]}, :require => :member
-          map.permission :approve_all_time_entries, {:timesheets => [:index, :show, :approve, :reject, :bulk_approve, :bulk_reject]}, :require => :member
+          map.permission :approve_time_entries, {:timesheets => [:approve, :reject]}, :require => :member
+          map.permission :approve_all_time_entries, {:timesheets => [:index, :show, :approve, :reject, :bulk_approve, :bulk_reject, :for_approval]}, :require => :member
         end
 
         map.project_module :news do |map|
@@ -204,8 +204,7 @@ module Redmine
           {:controller => 'timelog', :action => 'index'},
           :caption => :label_spent_time,
           :if => Proc.new do
-            User.current.allowed_to?(:view_time_entries, nil, :global => true) ||
-            User.current.allowed_to?(:log_time, nil, :global => true)
+            User.current.has_manager_or_admin_role_privileges?
           end
         )
         menu.push :timesheets, {:controller => 'timesheets', :action => 'index'},
@@ -371,7 +370,10 @@ module Redmine
           :permission => :add_issues
         )
         menu.push :time_entries, {:controller => 'timelog', :action => 'index'},
-                  :param => :project_id, :caption => :label_spent_time
+                  :param => :project_id, :caption => :label_spent_time,
+                  :if => Proc.new { |p|
+                    User.current.has_manager_or_admin_role_privileges?(p)
+                  }
         menu.push :timesheets, {:controller => 'timesheets', :action => 'index'},
                   :param => :project_id, :caption => :label_timesheet_plural,
                   :if => Proc.new { |p|

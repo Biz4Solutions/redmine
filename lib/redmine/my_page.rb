@@ -34,7 +34,7 @@ module Redmine
       'documents' => {:label => :label_document_plural},
       'timelog' => {:label => :label_spent_time},
       'activity' => {:label => :label_activity},
-      'my_pending_timesheets' => {:label => :label_my_pending_timesheets}
+      'my_pending_timesheets' => {:label => :'timesheet.label_my_pending_timesheets'}
     }
 
     def self.groups
@@ -47,7 +47,7 @@ module Redmine
 
       # Only add the timesheets_pending_my_approval block for users with approve_time_entries permission
       unless blocks.key?('timesheets_pending_my_approval') || !User.current.allowed_to?(:approve_time_entries, nil, :global => true)
-        blocks['timesheets_pending_my_approval'] = {:label => :label_timesheets_pending_my_approval}
+        blocks['timesheets_pending_my_approval'] = {:label => :'timesheet.label_timesheets_pending_my_approval'}
       end
 
       blocks.merge(additional_blocks).freeze

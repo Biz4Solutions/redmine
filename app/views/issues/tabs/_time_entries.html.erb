@@ -1,7 +1,7 @@
 <% for time_entry in time_entries%>
   <div id="time-entry-<%= time_entry.id %>" class="time_entry journal">
     <div class="note">
-    <% if time_entry.editable_by?(User.current) -%>
+    <% if time_entry.editable_by?(User.current) && User.current.has_manager_or_admin_role_privileges?(time_entry.project) -%>
       <div class="contextual">
         <span class="journal-actions">
         <%= link_to sprite_icon('edit', l(:button_edit)), edit_time_entry_path(time_entry),

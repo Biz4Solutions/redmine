@@ -24,6 +24,7 @@ class Timesheet < ApplicationRecord
   validate :end_date_after_start_date
   validate :no_overlapping_timesheets
   validate :timesheet_duration_is_one_week
+  validate :timesheet_starts_on_monday_and_ends_on_sunday
 
   # Safe attributes
   safe_attributes 'user_id', 'start_date', 'end_date'
@@ -209,6 +210,19 @@ class Timesheet < ApplicationRecord
 
     if duration != 7
       errors.add(:base, :timesheet_must_be_one_week)
+    end
+  end
+
+  def timesheet_starts_on_monday_and_ends_on_sunday
+    return if start_date.blank? || end_date.blank?
+
+    # In Ruby, Monday is 1, Sunday is 0
+    unless start_date.wday == 1
+      errors.add(:start_date, :must_be_monday)
+    end
+
+    unless end_date.wday == 0
+      errors.add(:end_date, :must_be_sunday)
     end
   end
 end

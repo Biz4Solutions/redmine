@@ -112,7 +112,7 @@
       <% end %>
     </ul>
     <p>
-    <% if User.current.allowed_to?(:log_time, @project) %>
+    <% if User.current.allowed_to?(:log_time, @project) && User.current.has_manager_or_admin_role_privileges?(@project) %>
       <%= link_to l(:button_log_time), new_project_time_entry_path(@project) %> |
     <% end %>
     <%= link_to(l(:label_details), project_time_entries_path(@project)) %> |

@@ -255,18 +255,11 @@ Rails.application.routes.draw do
     member do
       # Used when updating the edit form of an existing time entry
       patch 'edit', :to => 'timelog#edit'
-      post 'approve', :to => 'timelog#approve'
-      post 'reject', :to => 'timelog#reject'
-      post 'submit', :to => 'timelog#submit'
     end
     collection do
       get 'report'
       get 'bulk_edit'
       post 'bulk_update'
-      post 'bulk_approve', :to => 'timelog#bulk_approve'
-      post 'bulk_reject', :to => 'timelog#bulk_reject'
-      post 'submit', :to => 'timelog#submit'
-      post 'bulk_submit', :to => 'timelog#bulk_submit'
     end
   end
   match '/time_entries/:id', :to => 'timelog#destroy', :via => :delete, :id => /\d+/
@@ -432,6 +425,8 @@ Rails.application.routes.draw do
       post :approve
       post :reject
       post :add_time_entry
+      get :edit_time_entry
+      patch :update_time_entry
       delete :remove_time_entry
     end
   end

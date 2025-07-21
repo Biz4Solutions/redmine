@@ -338,7 +338,13 @@ class AccountController < ApplicationController
       set_autologin_cookie(user)
     end
     call_hook(:controller_account_success_authentication_after, {:user => user})
-    redirect_back_or_default my_page_path
+
+    # Prefer My Page over home page redirect
+    if params[:back_url] == '/' || params[:back_url] == home_url
+      redirect_to my_page_path
+    else
+      redirect_back_or_default my_page_path
+    end
   end
 
   def set_autologin_cookie(user)

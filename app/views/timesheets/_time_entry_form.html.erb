@@ -1,0 +1,5 @@
+<%= error_messages_for 'time_entry' %>
+
+<%= labelled_fields_for :time_entry, time_entry do |entry_form| %>
+  <%= render :partial => 'timelog/form', :locals => { :f => entry_form } %>
+<% end %> 
