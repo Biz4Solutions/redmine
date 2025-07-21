@@ -16,6 +16,8 @@ gem 'addressable'
 gem 'rubyzip', '~> 2.3.0'
 gem 'propshaft', '~> 1.1.0'
 gem 'rack', '>= 3.1.3'
+gem 'ostruct'
+gem 'rackup'
 
 #  Ruby Standard Gems
 gem 'csv', '~> 3.2.8'
@@ -70,7 +72,7 @@ if File.exist?(database_file)
     adapters.each do |adapter|
       case adapter.strip
       when /mysql2/
-        gem 'mysql2', '~> 0.5.0'
+        gem 'mysql2', '~> 0.5.6'
         gem "with_advisory_lock"
       when /postgresql/
         gem 'pg', '~> 1.5.3'

@@ -11,6 +11,8 @@
 /config/database.yml
 /config/email.yml
 /config/secrets.yml
+/config/master.key
+/config/credentials.yml.enc
 /config/initializers/session_store.rb
 /config/initializers/secret_token.rb
 /coverage
@@ -46,5 +48,3 @@
 
 /node_modules
 yarn-error.log
-
-/config/master.key
