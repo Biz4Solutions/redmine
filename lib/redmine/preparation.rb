@@ -96,8 +96,7 @@ module Redmine
                          {:projects => :settings, :project_enumerations => [:update, :destroy]},
                          :require => :member
           map.permission :log_time_for_other_users, :require => :member
-          map.permission :import_time_entries, {:timelog_imports => [:new, :create, :show, :settings, :mapping, :run]}, :require => :member
-          map.permission :approve_time_entries, {:timelog => [:approve, :reject]}, :require => :member
+          map.permission :import_time_entries, {}
         end
 
         map.project_module :news do |map|
@@ -202,18 +201,13 @@ module Redmine
         menu.push(
           :time_entries,
           {:controller => 'timelog', :action => 'index'},
-          :caption => :label_spent_time,
-          :if => Proc.new do
-            User.current.allowed_to?(:view_time_entries, nil, :global => true) ||
-            User.current.allowed_to?(:log_time, nil, :global => true)
-          end
+          :if =>
+            Proc.new do
+              User.current.allowed_to?(:view_time_entries, nil, :global => true) &&
+                EnabledModule.exists?(:project => Project.visible, :name => :time_tracking)
+            end,
+            :caption => :label_spent_time
         )
-        # TIMESHEET_UI_DISABLED: Uncomment the lines below to re-enable timesheets menu
-        # menu.push :timesheets, {:controller => 'timesheets', :action => 'index'},
-        #   :caption => :label_timesheets,
-        #   :if => Proc.new {
-        #     User.current.logged?
-        #   }
         menu.push(
           :gantt,
           {:controller => 'gantts', :action => 'show'},
@@ -244,12 +238,6 @@ module Redmine
             end,
           :caption => :label_news_plural
         )
-        # TIMESHEET_UI_DISABLED: Uncomment the lines below to re-enable pending submission menu
-        # menu.push :pending_submission, {:controller => 'timelog', :action => 'pending_submission'},
-        #   :caption => :label_pending_submission,
-        #   :if => Proc.new {
-        #     User.current.allowed_to?(:log_time, nil, :global => true)
-        #   }
       end
 
       MenuManager.map :admin_menu do |menu|
@@ -379,10 +367,6 @@ module Redmine
         )
         menu.push :time_entries, {:controller => 'timelog', :action => 'index'},
                   :param => :project_id, :caption => :label_spent_time
-        # TIMESHEET_UI_DISABLED: Uncomment the lines below to re-enable pending submission menu
-        # menu.push :pending_submission, {:controller => 'timelog', :action => 'pending_submission'},
-        #           :caption => :label_pending_submission,
-        #           :if => Proc.new { User.current.allowed_to?(:log_time, nil, :global => true) }
         menu.push :gantt, {:controller => 'gantts', :action => 'show'},
                   :param => :project_id, :caption => :label_gantt
         menu.push :calendar, {:controller => 'calendars', :action => 'show'},

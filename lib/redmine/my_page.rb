@@ -34,9 +34,6 @@ module Redmine
       'documents' => {:label => :label_document_plural},
       'timelog' => {:label => :label_spent_time},
       'activity' => {:label => :label_activity}
-      # TIMESHEET_UI_DISABLED: Uncomment the lines below to re-enable timesheet blocks
-      # 'my_pending_time_entries' => {:label => :label_my_pending_time_entries},
-      # 'my_timesheets' => {:label => :label_my_timesheets}
     }
 
     def self.groups
@@ -45,14 +42,7 @@ module Redmine
 
     # Returns the available blocks
     def self.blocks
-      blocks = CORE_BLOCKS.dup
-
-      # TIMESHEET_UI_DISABLED: Uncomment the lines below to re-enable pending timesheets block
-      # unless blocks.key?('pending_timesheets') || !User.current.allowed_to?(:approve_time_entries, nil, :global => true)
-      #   blocks['pending_timesheets'] = {:label => :label_pending_timesheets}
-      # end
-
-      blocks.merge(additional_blocks).freeze
+      CORE_BLOCKS.merge(additional_blocks).freeze
     end
 
     def self.block_options(blocks_in_use=[])
@@ -101,16 +91,8 @@ module Redmine
     def self.default_layout
       {
         'left' => ['issuesassignedtome'],
-        'right' => ['issuesreportedbyme'],
-        'top' => ['my_pending_time_entries']
+        'right' => ['issuesreportedbyme']
       }
-    end
-
-    # Returns the default layout for My Page for users with approve_time_entries permission
-    def self.default_layout_for_approvers
-      layout = default_layout
-      layout['top'] = ['pending_timesheets']
-      layout
     end
   end
 end

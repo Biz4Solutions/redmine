@@ -4,6 +4,26 @@ Redmine::Plugin.register :b4s_allocation do
   description 'Project allocation, bench/billable tracking and time entry approval'
   version '0.1.0'
   requires_redmine version_or_higher: '6.1.0'
+
+  project_module :time_tracking do
+    permission :approve_time_entries, {:timelog => [:approve, :reject]}, :require => :member
+  end
+end
+
+# Show "Spent time" to anyone who can view or log time (core also requires a
+# visible project with time tracking enabled).
+Redmine::MenuManager.map :application_menu do |menu|
+  menu.delete :time_entries
+  menu.push(
+    :time_entries,
+    {:controller => 'timelog', :action => 'index'},
+    :caption => :label_spent_time,
+    :after => :issues,
+    :if => Proc.new do
+      User.current.allowed_to?(:view_time_entries, nil, :global => true) ||
+      User.current.allowed_to?(:log_time, nil, :global => true)
+    end
+  )
 end
 
 # Core classes are reloaded in development and init.rb runs on every
@@ -23,6 +43,7 @@ end
 }.each do |klass, patch|
   klass.prepend(patch) unless klass < patch
 end
+Redmine::MyPage.singleton_class.prepend(B4sAllocation::Patches::MyPagePatch) unless Redmine::MyPage.singleton_class < B4sAllocation::Patches::MyPagePatch
 Mailer.include(B4sAllocation::Patches::MailerPatch) unless Mailer < B4sAllocation::Patches::MailerPatch
 
 # Plugin config/routes.rb is drawn after core routes, where core's
