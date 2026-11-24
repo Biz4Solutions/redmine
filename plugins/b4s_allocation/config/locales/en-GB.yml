@@ -1,0 +1,8 @@
+en-GB:
+  activerecord:
+    models:
+      timesheet:
+        attributes:
+          base:
+            overlapping_timesheet: A timesheet already exists for this date range
+            timesheet_must_be_one_week: Timesheet must cover exactly one week

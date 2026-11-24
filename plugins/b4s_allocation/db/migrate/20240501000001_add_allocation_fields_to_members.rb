@@ -1,5 +1,9 @@
 class AddAllocationFieldsToMembers < ActiveRecord::Migration[6.1]
+  include B4sAllocation::CoreMigration
+
   def change
+    return if applied_in_core?
+
     add_column :members, :allocation_percentage, :decimal, precision: 5, scale: 2, default: 100.0, null: false
     add_column :members, :start_date, :date
     add_column :members, :end_date, :date

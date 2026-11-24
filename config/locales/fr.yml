@@ -1518,7 +1518,3 @@ fr:
   label_alert_caution: Caution
   label_alert_important: Important
   field_ratio_interval: Ratio interval
-  field_allocation_percentage: "Pourcentage d'allocation"
-  field_start_date: "Date de début"
-  field_end_date: "Date de fin"
-  field_billable: "Facturable"

@@ -1,0 +1,8 @@
+zh:
+  activerecord:
+    models:
+      timesheet:
+        attributes:
+          base:
+            overlapping_timesheet: 此日期范围已存在工时表
+            timesheet_must_be_one_week: 工时表必须正好覆盖一周

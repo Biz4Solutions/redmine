@@ -1,5 +1,9 @@
 class AddTimesheetApprovalWorkflow < ActiveRecord::Migration[6.1]
+  include B4sAllocation::CoreMigration
+
   def change
+    return if applied_in_core?
+
     # Add status field to time_entries
     add_column :time_entries, :status, :string, default: 'pending', null: false
     add_column :time_entries, :approved_by_id, :integer

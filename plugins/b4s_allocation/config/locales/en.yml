@@ -1,0 +1,100 @@
+en:
+  activerecord:
+    errors:
+      models:
+        member:
+          attributes:
+            allocation_percentage:
+              exceeds_total: would exceed 100% total allocation for this user
+              invalid_range: must be between 0 and 100
+        timesheet:
+          attributes:
+            base:
+              overlapping_timesheet: A timesheet already exists for this date range
+              timesheet_must_be_one_week: Timesheet must cover exactly one week
+  error_cannot_modify_approved_time_entry: Cannot modify an approved time entry
+  error_cannot_modify_time_entry_in_submitted_timesheet: Cannot modify a time entry
+    in a submitted timesheet
+  error_exceeds_allocation_percentage: Hours exceed user's allocation % (maximum %{max_hours}
+    hours per day at %{allocation}% allocation)
+  error_not_your_time_entry: You can only submit your own time entries
+  error_rejection_reason_required: Rejection reason is required
+  error_spent_on_after_allocation_end: Cannot log time after allocation end date (%{end_date})
+  error_spent_on_before_allocation_start: Cannot log time before allocation start
+    date (%{start_date})
+  error_time_entry_already_submitted: This time entry has already been submitted
+  error_user_not_allocated_to_project: User is not allocated to this project
+  error_user_not_allocated_to_project_on_date: User is not allocated to this project
+    on the specified date
+  field_allocation_percentage: Allocation %
+  field_approved_by: Approved By
+  field_approved_on: Approved On
+  field_billable: Billable
+  field_date_range: Date Range
+  field_end_date: End date
+  field_rejected_on: Rejected on
+  field_rejection_reason: Rejection Reason
+  field_total_allocation: Total allocation
+  field_week: Week
+  label_active_allocations: Active Allocations
+  label_allocation: Allocation
+  label_approve: Approve
+  label_approve_all: Approve All
+  label_approve_selected: Approve Selected
+  label_approved: Approved
+  label_available_allocation: Available Allocation
+  label_bench_allocation: Bench Allocation
+  label_bench_project: Bench Project
+  label_date_range: Date Range
+  label_draft: Draft
+  label_my_pending_time_entries: My Pending Time Entries
+  label_past_allocations: Past Allocations
+  label_pending_approval: Pending Approval
+  label_pending_submission: Pending Submission Time Entries
+  label_pending_timesheets: Pending Timesheets for Approval
+  label_project_allocations: Project Allocations
+  label_regular_allocation: Regular Allocation
+  label_reject: Reject
+  label_reject_all: Reject All
+  label_reject_selected: Reject Selected
+  label_rejected: Rejected
+  label_rejection_reason: Rejection Reason
+  label_submit_for_approval: Submit for Approval
+  label_submit_selected_for_approval: Submit Selected for Approval
+  label_timesheet_approval: Timesheet Approval
+  label_timesheet_new: New Timesheet
+  label_timesheets: Timesheets
+  label_total_allocation: Total allocation
+  mail_body_time_entry_approved: "%{approver} has approved your time entry of %{hours}
+    hours for %{project}."
+  mail_body_time_entry_pending_approval: "%{user} has submitted %{hours} hours for
+    %{project} that requires your approval."
+  mail_body_time_entry_pending_approval_reminder: You have %{count} time entries waiting
+    for your approval.
+  mail_body_time_entry_rejected: "%{approver} has rejected your time entry of %{hours}
+    hours for %{project}."
+  mail_subject_time_entry_approved: Time entry approved
+  mail_subject_time_entry_pending_approval: Time entry pending approval
+  mail_subject_time_entry_pending_approval_reminder: Pending time entries require
+    your approval
+  mail_subject_time_entry_rejected: Time entry rejected
+  notice_member_allocations_expired: Member allocations have been automatically expired
+    due to project status change.
+  notice_time_entries_approved: "%{count} time entries were successfully approved."
+  notice_time_entries_rejected: "%{count} time entries were successfully rejected."
+  notice_time_entries_submitted: "%{count} time entries were successfully submitted
+    for approval"
+  notice_time_entry_approved: Time entry was successfully approved.
+  notice_time_entry_rejected: Time entry was successfully rejected.
+  notice_time_entry_submitted: Time entry was successfully submitted for approval
+  notice_timesheet_submitted: Timesheet was successfully submitted for approval
+  notice_timesheets_approved: "%{count} timesheets were successfully approved"
+  notice_timesheets_rejected: "%{count} timesheets were successfully rejected"
+  notice_timesheets_submitted: "%{count} timesheets were successfully submitted for
+    approval"
+  permission_approve_time_entries: Approve time entries
+  text_bench_project_info: If checked, allocations to this project will not count
+    against resource availability and may be automatically reduced if total allocation
+    exceeds 100%
+  text_member_allocations_expired: All member allocations for this project have been
+    automatically expired as the project is now %{status}.

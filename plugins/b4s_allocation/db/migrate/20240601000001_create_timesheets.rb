@@ -1,5 +1,9 @@
 class CreateTimesheets < ActiveRecord::Migration[6.1]
+  include B4sAllocation::CoreMigration
+
   def change
+    return if applied_in_core?
+
     create_table :timesheets do |t|
       t.integer :user_id, null: false
       t.date :start_date, null: false

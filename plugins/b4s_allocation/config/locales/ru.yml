@@ -1,0 +1,9 @@
+ru:
+  activerecord:
+    errors:
+      models:
+        timesheet:
+          attributes:
+            base:
+              overlapping_timesheet: Уже существует табель для этого диапазона дат
+              timesheet_must_be_one_week: Табель должен охватывать ровно одну неделю

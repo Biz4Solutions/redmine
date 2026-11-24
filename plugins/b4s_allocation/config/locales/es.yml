@@ -1,0 +1,14 @@
+es:
+  activerecord:
+    errors:
+      models:
+        timesheet:
+          attributes:
+            base:
+              overlapping_timesheet: Ya existe una hoja de tiempo para este rango
+                de fechas
+              timesheet_must_be_one_week: La hoja de tiempo debe cubrir exactamente
+                una semana
+  field_allocation_percentage: Porcentaje de asignación
+  field_billable: Facturable
+  field_end_date: Fecha de fin
