@@ -22,8 +22,11 @@ class Timesheet < ApplicationRecord
   scope :visible, (lambda do |user = User.current|
     next all if user.admin?
 
-    approvable = Project.where(Project.allowed_to_condition(user, :approve_time_entries)).select(:id)
-    where(user_id: user.id).or(where(id: TimeEntry.where(project_id: approvable).select(:timesheet_id)))
+    # Fetch the ids first: as a nested subquery, MySQL 8 re-evaluates the
+    # project permission condition per row (~260s on prod vs 0.06s this way).
+    approvable = Project.where(Project.allowed_to_condition(user, :approve_time_entries)).ids
+    timesheet_ids = TimeEntry.where(project_id: approvable).where.not(timesheet_id: nil).distinct.pluck(:timesheet_id)
+    where(user_id: user.id).or(where(id: timesheet_ids))
   end)
 
   def visible?(user = User.current)
