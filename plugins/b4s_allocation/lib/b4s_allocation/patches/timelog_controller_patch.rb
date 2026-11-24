@@ -125,13 +125,13 @@ module B4sAllocation
 
         if @time_entry.user_id != User.current.id
           flash[:error] = l(:error_not_your_time_entry)
-          redirect_back_or_default project_time_entries_path(@project)
+          redirect_back_or_default pending_submission_time_entries_path
           return
         end
 
         if @time_entry.status != TimeEntry::STATUS_PENDING
           flash[:error] = l(:error_time_entry_already_submitted)
-          redirect_back_or_default project_time_entries_path(@project)
+          redirect_back_or_default pending_submission_time_entries_path
           return
         end
 
@@ -139,14 +139,14 @@ module B4sAllocation
         Mailer.deliver_time_entry_pending_approval(@time_entry)
 
         flash[:notice] = l(:notice_time_entry_submitted)
-        redirect_back_or_default project_time_entries_path(@project)
+        redirect_back_or_default pending_submission_time_entries_path
       end
 
       # Submit multiple time entries for approval
       def bulk_submit
         submitted_count = 0
 
-        @time_entries.each do |time_entry|
+        TimeEntry.where(:id => params[:ids]).each do |time_entry|
           if time_entry.user_id == User.current.id && time_entry.status == TimeEntry::STATUS_PENDING
             # Time entry is already in pending status, so we just need to notify approvers
             Mailer.deliver_time_entry_pending_approval(time_entry)
@@ -155,7 +155,7 @@ module B4sAllocation
         end
 
         flash[:notice] = l(:notice_time_entries_submitted, :count => submitted_count)
-        redirect_back_or_default time_entries_pending_submission_path
+        redirect_back_or_default pending_submission_time_entries_path
       end
 
       private

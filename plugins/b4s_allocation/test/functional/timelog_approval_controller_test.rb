@@ -53,9 +53,36 @@ class TimelogApprovalControllerTest < Redmine::ControllerTest
   end
 
   def test_pending_submission_lists_own_pending_entries
-    skip 'BUG: pending_submission view calls submit_time_entry_path, but only the collection route submit_time_entries exists (500 when any entry is listed)'
     @request.session[:user_id] = @user.id
     get :pending_submission
     assert_response :success
+    assert_select "tr#time-entry-#{@entry.id} a[href='/time_entries/#{@entry.id}/submit'][data-method=post]"
+  end
+
+  def test_submit_notifies_approvers
+    @request.session[:user_id] = @user.id
+    ActionMailer::Base.deliveries.clear
+    post :submit, params: {id: @entry.id}
+    assert_redirected_to '/time_entries/pending_submission'
+    assert_equal I18n.t(:notice_time_entry_submitted), flash[:notice]
+    assert_include @manager.mail, ActionMailer::Base.deliveries.flat_map(&:bcc) + ActionMailer::Base.deliveries.flat_map(&:to)
+  end
+
+  def test_submit_rejects_other_users_entry
+    @request.session[:user_id] = @manager.id
+    ActionMailer::Base.deliveries.clear
+    post :submit, params: {id: @entry.id}
+    assert_redirected_to '/time_entries/pending_submission'
+    assert_equal I18n.t(:error_not_your_time_entry), flash[:error]
+    assert_empty ActionMailer::Base.deliveries
+  end
+
+  def test_bulk_submit_only_counts_own_entries
+    other = TimeEntry.create!(project: @project, user: @manager, author: @manager,
+                              activity: TimeEntryActivity.first, spent_on: Date.new(2026, 11, 18), hours: 1)
+    @request.session[:user_id] = @user.id
+    post :bulk_submit, params: {ids: [@entry.id, other.id]}
+    assert_redirected_to '/time_entries/pending_submission'
+    assert_equal I18n.t(:notice_time_entries_submitted, count: 1), flash[:notice]
   end
 end

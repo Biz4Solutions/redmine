@@ -6,7 +6,7 @@ class B4sAllocationRoutingTest < Redmine::RoutingTest
     should_route 'POST /time_entries/22/reject' => 'timelog#reject', :id => '22'
     should_route 'POST /time_entries/bulk_approve' => 'timelog#bulk_approve'
     should_route 'POST /time_entries/bulk_reject' => 'timelog#bulk_reject'
-    should_route 'POST /time_entries/submit' => 'timelog#submit'
+    should_route 'POST /time_entries/1/submit' => 'timelog#submit', :id => '1'
     should_route 'POST /time_entries/bulk_submit' => 'timelog#bulk_submit'
   end
 

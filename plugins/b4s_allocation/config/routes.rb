@@ -2,11 +2,11 @@ resources :time_entries, :controller => 'timelog', :only => [] do
   member do
     post 'approve', :to => 'timelog#approve'
     post 'reject', :to => 'timelog#reject'
+    post 'submit', :to => 'timelog#submit'
   end
   collection do
     post 'bulk_approve', :to => 'timelog#bulk_approve'
     post 'bulk_reject', :to => 'timelog#bulk_reject'
-    post 'submit', :to => 'timelog#submit'
     post 'bulk_submit', :to => 'timelog#bulk_submit'
   end
 end
