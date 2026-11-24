@@ -112,7 +112,10 @@ module B4sAllocation
         @query.sort_criteria = [['spent_on', 'desc']]
         @query.column_names = [:project, :spent_on, :user, :activity, :issue, :comments, :hours]
 
-        @entries = @query.results_scope
+        scope = @query.results_scope
+        @entry_count = scope.count
+        @entry_pages = Redmine::Pagination::Paginator.new @entry_count, per_page_option, params['page']
+        @entries = scope.offset(@entry_pages.offset).limit(@entry_pages.per_page).to_a
 
         respond_to do |format|
           format.html { render :action => 'pending_submission' }

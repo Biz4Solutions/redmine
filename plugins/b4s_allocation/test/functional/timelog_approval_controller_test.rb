@@ -85,4 +85,16 @@ class TimelogApprovalControllerTest < Redmine::ControllerTest
     assert_redirected_to '/time_entries/pending_submission'
     assert_equal I18n.t(:notice_time_entries_submitted, count: 1), flash[:notice]
   end
+
+  def test_pending_submission_is_paginated
+    25.times do |i|
+      TimeEntry.create!(project: @project, user: @user, author: @user, activity: TimeEntryActivity.first,
+                        spent_on: Date.new(2026, 11, 16) + (i % 5), hours: 0.5)
+    end
+    @request.session[:user_id] = @user.id
+    get :pending_submission
+    assert_response :success
+    assert_select 'tr.time-entry', 25
+    assert_select 'span.pagination a[href*="page=2"]'
+  end
 end
