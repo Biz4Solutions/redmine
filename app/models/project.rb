@@ -28,7 +28,10 @@ class Project < ApplicationRecord
   STATUS_SCHEDULED_FOR_DELETION = 10
 
   # Maximum length for project identifiers
-  IDENTIFIER_MAX_LENGTH = 100
+  IDENTIFIER_MAX_LENGTH = 20
+  # Project identifier validation regexp
+  IDENTIFIER_PATTERN_STR = '^[A-Z0-9][A-Z0-9\-_]*$'
+  IDENTIFIER_PATTERN = /\A#{IDENTIFIER_PATTERN_STR}\z/
 
   has_many :memberships, :class_name => 'Member', :inverse_of => :project
   # Memberships of active users only
@@ -81,7 +84,7 @@ class Project < ApplicationRecord
   validates_length_of :homepage, :maximum => 255
   validates_length_of :identifier, :maximum => IDENTIFIER_MAX_LENGTH
   # downcase letters, digits, dashes but not digits only
-  validates_format_of :identifier, :with => /\A(?!\d+$)[a-z0-9\-_]*\z/,
+  validates_format_of :identifier, :with => IDENTIFIER_PATTERN,
                       :if => proc {|p| p.identifier_changed?}
   # reserved words
   validates_exclusion_of :identifier,
@@ -91,6 +94,11 @@ class Project < ApplicationRecord
 
   after_update :update_versions_from_hierarchy_change,
                :if => proc {|project| project.saved_change_to_parent_id?}
+  after_update :expire_member_allocations,
+               :if => proc {|project|
+                 project.saved_change_to_status? &&
+                              [STATUS_CLOSED, STATUS_ARCHIVED, STATUS_SCHEDULED_FOR_DELETION].include?(project.status)
+               }
   before_destroy :delete_all_members
   after_save :update_inherited_members,
              :if => proc {|project| project.saved_change_to_inherit_members?}
@@ -852,7 +860,8 @@ class Project < ApplicationRecord
     'parent_id',
     'default_version_id',
     'default_issue_query_id',
-    'default_assigned_to_id')
+    'default_assigned_to_id',
+    'bench_project')
 
   safe_attributes(
     'is_public',
@@ -1366,5 +1375,10 @@ class Project < ApplicationRecord
   def fetch_last_activity_date
     latest_activities = Redmine::Activity::Fetcher.new(User.current, :project => self).events(nil, nil, :last_by_project => true)
     latest_activities.empty? ? nil : latest_activities.to_h[self.id]
+  end
+
+  def expire_member_allocations
+    # Expire all member allocations for this project when it's closed, archived, or scheduled for deletion
+    Member.expire_allocations_for_project(id, Date.today)
   end
 end

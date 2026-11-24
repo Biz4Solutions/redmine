@@ -1,0 +1,22 @@
+<h1><%= l(:mail_subject_time_entry_approved) %></h1>
+
+<p><%= l(:mail_body_time_entry_approved, 
+      :approver => link_to_user(@time_entry.approved_by),
+      :hours => @time_entry.hours,
+      :project => link_to(@time_entry.project.name, project_url(@time_entry.project))) %></p>
+
+<ul>
+  <li><%= l(:field_spent_on) %>: <%= format_date(@time_entry.spent_on) %></li>
+  <% if @time_entry.issue %>
+  <li><%= l(:field_issue) %>: <%= link_to("#{@time_entry.issue.tracker.name} ##{@time_entry.issue.id}: #{@time_entry.issue.subject}", issue_url(@time_entry.issue)) %></li>
+  <% end %>
+  <li><%= l(:field_activity) %>: <%= @time_entry.activity.name %></li>
+  <% if @time_entry.comments.present? %>
+  <li><%= l(:field_comments) %>: <%= @time_entry.comments %></li>
+  <% end %>
+  <li><%= l(:field_approved_on) %>: <%= format_time(@time_entry.approved_on) %></li>
+</ul>
+
+<p>
+<%= link_to l(:button_view_time_entries), @time_entry_url %>
+</p> 

@@ -73,6 +73,11 @@ namespace :redmine do
     Rake::Task["redmine:plugins:migrate"].invoke
   end
 
+  desc 'Deactivate expired memberships'
+  task :deactivate_expired_memberships => :environment do
+    Member.deactivate_expired
+  end
+
 desc <<-DESC
 FOR EXPERIMENTAL USE ONLY, Moves Redmine data from production database to the development database.
 This task should only be used when you need to move data from one DBMS to a different one (eg. MySQL to PostgreSQL).

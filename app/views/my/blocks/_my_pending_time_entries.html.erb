@@ -1,0 +1,49 @@
+<%
+  # Find the user's time entries that are pending approval
+  entries = TimeEntry.pending_approval.
+    where(:user_id => User.current.id).
+    order("#{TimeEntry.table_name}.spent_on DESC").
+    limit(10)
+%>
+
+<h3>
+  <%= link_to l(:label_my_pending_time_entries), time_entries_path(:set_filter => 1, :status => TimeEntry::STATUS_PENDING, :user_id => 'me') %>
+  (<%= entries.count %>)
+</h3>
+
+<% if entries.any? %>
+<table class="list time-entries odd-even">
+<thead>
+  <tr>
+    <th><%= l(:field_project) %></th>
+    <th><%= l(:field_issue) %></th>
+    <th><%= l(:field_hours) %></th>
+    <th><%= l(:field_spent_on) %></th>
+    <th><%= l(:field_activity) %></th>
+    <th><%= l(:field_comments) %></th>
+    <th><%= l(:field_status) %></th>
+  </tr>
+</thead>
+<tbody>
+  <% entries.each do |entry| %>
+  <tr id="time-entry-<%= entry.id %>" class="time-entry">
+    <td class="project"><%= link_to_project(entry.project) %></td>
+    <td class="subject">
+      <% if entry.issue %>
+        <%= link_to_issue(entry.issue, :truncate => 50) %>
+      <% end %>
+    </td>
+    <td class="hours"><%= html_hours(format_hours(entry.hours)) %></td>
+    <td class="spent_on"><%= format_date(entry.spent_on) %></td>
+    <td class="activity"><%= entry.activity %></td>
+    <td class="comments"><%= entry.comments %></td>
+    <td class="status">
+      <span class="badge badge-warning"><%= l(:label_pending_approval) %></span>
+    </td>
+  </tr>
+  <% end %>
+</tbody>
+</table>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %> 

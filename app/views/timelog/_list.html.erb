@@ -16,7 +16,7 @@
 </thead>
 <tbody>
 <% grouped_query_results(entries, @query) do |entry, group_name, group_count, group_totals| -%>
-  <% if group_name %>
+      <% if group_name %>
     <% reset_cycle %>
     <tr class="group open">
       <td colspan="<%= @query.inline_columns.size + 2 %>">
@@ -47,6 +47,7 @@
                     :title => l(:button_delete),
                     :class => 'icon-only icon-del' %>
     <% end -%>
+
         <%= link_to_context_menu %>
     </td>
   </tr>

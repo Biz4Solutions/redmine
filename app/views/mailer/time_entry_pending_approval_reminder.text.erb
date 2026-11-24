@@ -1,0 +1,16 @@
+<%= l(:mail_subject_time_entry_pending_approval_reminder) %>
+
+<%= l(:mail_body_time_entry_pending_approval_reminder, :count => @time_entries.size) %>
+
+<% @time_entries.each do |time_entry| %>
+* <%= time_entry.user.name %> - <%= time_entry.project.name %> - <%= time_entry.hours %> <%= l(:field_hours) %> - <%= format_date(time_entry.spent_on) %>
+  <% if time_entry.issue %>
+  <%= l(:field_issue) %>: <%= "#{time_entry.issue.tracker.name} ##{time_entry.issue.id}: #{time_entry.issue.subject}" %>
+  <% end %>
+  <%= l(:field_activity) %>: <%= time_entry.activity.name %>
+  <% if time_entry.comments.present? %>
+  <%= l(:field_comments) %>: <%= time_entry.comments %>
+  <% end %>
+<% end %>
+
+<%= l(:button_view_time_entries) %>: <%= @time_entries_url %> 

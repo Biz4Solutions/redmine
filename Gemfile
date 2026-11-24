@@ -23,6 +23,8 @@ gem "doorkeeper", "~> 5.8.2"
 gem "bcrypt", require: false
 gem "doorkeeper-i18n", "~> 5.2"
 gem "requestjs-rails", "~> 0.0.13"
+gem 'ostruct'
+gem 'rackup'
 
 #  Ruby Standard Gems
 gem 'csv', '~> 3.3.2'
@@ -71,7 +73,7 @@ if File.exist?(database_file)
     adapters.each do |adapter|
       case adapter.strip
       when /mysql2/
-        gem 'mysql2', '~> 0.5.0'
+        gem 'mysql2', '~> 0.5.6'
         gem "with_advisory_lock"
       when /trilogy/
         gem 'trilogy', '~> 2.9.0'

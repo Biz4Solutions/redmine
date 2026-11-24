@@ -37,6 +37,11 @@ class TimeEntryQuery < Query
     QueryAssociationColumn.new(:issue, :fixed_version, :caption => :field_fixed_version, :sortable => Version.fields_for_order_statement),
     QueryColumn.new(:comments),
     QueryColumn.new(:hours, :sortable => "#{TimeEntry.table_name}.hours", :totalable => true),
+    # Approval workflow columns
+    QueryColumn.new(:status, :sortable => "#{TimeEntry.table_name}.status", :groupable => true),
+    QueryColumn.new(:approved_by, :sortable => lambda {User.fields_for_order_statement("approved_by")}, :groupable => true),
+    TimestampQueryColumn.new(:approved_on, :sortable => "#{TimeEntry.table_name}.approved_on", :default_order => 'desc'),
+    QueryColumn.new(:rejection_reason),
   ]
 
   def initialize(attributes=nil, *args)
@@ -46,6 +51,15 @@ class TimeEntryQuery < Query
 
   def initialize_available_filters
     add_available_filter "spent_on", :type => :date_past
+    add_available_filter(
+      "status",
+      :type => :list,
+      :values => [
+        [l(:label_pending_approval), TimeEntry::STATUS_PENDING],
+        [l(:label_approved), TimeEntry::STATUS_APPROVED],
+        [l(:label_rejected), TimeEntry::STATUS_REJECTED]
+      ]
+    )
     add_available_filter(
       "project_id",
       :type => :list, :values => lambda {project_values}
@@ -121,6 +135,17 @@ class TimeEntryQuery < Query
 
     add_available_filter "comments", :type => :text
     add_available_filter "hours", :type => :float
+    
+    # Approval workflow filters
+    add_available_filter(
+      "approved_by_id",
+      :type => :list_optional, 
+      :values => lambda {author_values}
+    )
+    
+    add_available_filter "approved_on", :type => :date_past
+    
+    add_available_filter "rejection_reason", :type => :text
 
     add_custom_fields_filters(time_entry_custom_fields)
     add_associations_custom_fields_filters :project

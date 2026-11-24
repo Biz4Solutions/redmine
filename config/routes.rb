@@ -262,11 +262,18 @@ Rails.application.routes.draw do
     member do
       # Used when updating the edit form of an existing time entry
       patch 'edit', :to => 'timelog#edit'
+      post 'approve', :to => 'timelog#approve'
+      post 'reject', :to => 'timelog#reject'
     end
     collection do
       get 'report'
       get 'bulk_edit'
       post 'bulk_update'
+      post 'bulk_approve', :to => 'timelog#bulk_approve'
+      post 'bulk_reject', :to => 'timelog#bulk_reject'
+      get 'pending_submission', :to => 'timelog#pending_submission'
+      post 'submit', :to => 'timelog#submit'
+      post 'bulk_submit', :to => 'timelog#bulk_submit'
     end
   end
   match '/time_entries/:id', :to => 'timelog#destroy', :via => :delete, :id => /\d+/
@@ -426,6 +433,26 @@ Rails.application.routes.draw do
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", :as => :rails_health_check
+
+  # Timesheets
+  resources :timesheets do
+    member do
+      post 'submit'
+    end
+
+    collection do
+      post 'bulk_submit'
+      post 'bulk_approve'
+      post 'bulk_reject'
+      get 'pending_approval'
+    end
+  end
+
+  resources :members do
+    collection do
+      get 'max_availability/:user_id', to: 'members#max_availability'
+    end
+  end
 
   Redmine::Plugin.directory.glob("*/config/routes.rb").sort.each do |plugin_routes_path|
     instance_eval(plugin_routes_path.read, plugin_routes_path.to_s)

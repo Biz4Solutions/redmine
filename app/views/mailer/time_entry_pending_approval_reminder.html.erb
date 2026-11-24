@@ -1,0 +1,38 @@
+<h1><%= l(:mail_subject_time_entry_pending_approval_reminder) %></h1>
+
+<p><%= l(:mail_body_time_entry_pending_approval_reminder, :count => @time_entries.size) %></p>
+
+<table class="list">
+  <thead>
+    <tr>
+      <th><%= l(:field_user) %></th>
+      <th><%= l(:field_project) %></th>
+      <th><%= l(:field_issue) %></th>
+      <th><%= l(:field_hours) %></th>
+      <th><%= l(:field_spent_on) %></th>
+      <th><%= l(:field_activity) %></th>
+      <th><%= l(:field_comments) %></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @time_entries.each do |time_entry| %>
+    <tr>
+      <td><%= link_to_user(time_entry.user) %></td>
+      <td><%= link_to(time_entry.project.name, project_url(time_entry.project)) %></td>
+      <td>
+        <% if time_entry.issue %>
+          <%= link_to("#{time_entry.issue.tracker.name} ##{time_entry.issue.id}", issue_url(time_entry.issue)) %>
+        <% end %>
+      </td>
+      <td><%= time_entry.hours %></td>
+      <td><%= format_date(time_entry.spent_on) %></td>
+      <td><%= time_entry.activity.name %></td>
+      <td><%= time_entry.comments %></td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p>
+<%= link_to l(:button_view_time_entries), @time_entries_url %>
+</p> 

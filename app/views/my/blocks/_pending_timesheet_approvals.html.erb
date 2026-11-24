@@ -1,0 +1,55 @@
+<%
+  # Find timesheets that need approval and the user has permission to approve
+  project_ids = Member.joins(:roles)
+                     .where(user_id: User.current.id)
+                     .where("#{Role.table_name}.permissions LIKE '%:approve_time_entries%'")
+                     .pluck(:project_id).uniq
+                     
+  # Get all time entries for these projects that are pending approval
+  time_entries = TimeEntry.pending_approval
+                         .where(project_id: project_ids)
+                         .where.not(user_id: User.current.id)
+                         
+  # Get the unique timesheet IDs
+  timesheet_ids = time_entries.pluck(:timesheet_id).uniq.compact
+  
+  # Get the timesheets
+  timesheets = Timesheet.pending_approval
+                       .where(id: timesheet_ids)
+                       .order(start_date: :desc)
+                       .limit(10)
+%>
+
+<h3>
+  <%= link_to l(:label_pending_timesheets), pending_approval_timesheets_path %>
+  (<%= timesheets.count %>)
+</h3>
+
+<% if timesheets.any? %>
+<table class="list timesheets odd-even">
+<thead>
+  <tr>
+    <th><%= l(:field_user) %></th>
+    <th><%= l(:field_week) %></th>
+    <th><%= l(:field_date_range) %></th>
+    <th><%= l(:field_hours) %></th>
+    <th></th>
+  </tr>
+</thead>
+<tbody>
+  <% timesheets.each do |timesheet| %>
+  <tr class="timesheet pending">
+    <td class="user"><%= link_to_user(timesheet.user) %></td>
+    <td class="week"><%= timesheet.week_number %></td>
+    <td class="date-range"><%= timesheet.date_range %></td>
+    <td class="hours"><%= html_hours(format_hours(timesheet.total_hours)) %></td>
+    <td class="buttons">
+      <%= link_to l(:button_view), timesheet_path(timesheet), :class => 'icon icon-magnifier' %>
+    </td>
+  </tr>
+  <% end %>
+</tbody>
+</table>
+<% else %>
+  <p class="nodata"><%= l(:label_no_data) %></p>
+<% end %> 

@@ -1,0 +1,8 @@
+<p><%= l(:mail_body_timesheet_approved, 
+       :approver => @timesheet.approved_by.name, 
+       :hours => format_hours(@timesheet.total_hours), 
+       :date_range => @timesheet.date_range) %></p>
+
+<p>
+<%= l(:field_url) %>: <%= link_to @timesheet_url, @timesheet_url %>
+</p> 

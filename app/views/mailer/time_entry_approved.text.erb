@@ -1,0 +1,18 @@
+<%= l(:mail_subject_time_entry_approved) %>
+
+<%= l(:mail_body_time_entry_approved, 
+      :approver => @time_entry.approved_by.name,
+      :hours => @time_entry.hours,
+      :project => @time_entry.project.name) %>
+
+<%= l(:field_spent_on) %>: <%= format_date(@time_entry.spent_on) %>
+<% if @time_entry.issue %>
+<%= l(:field_issue) %>: <%= "#{@time_entry.issue.tracker.name} ##{@time_entry.issue.id}: #{@time_entry.issue.subject}" %>
+<% end %>
+<%= l(:field_activity) %>: <%= @time_entry.activity.name %>
+<% if @time_entry.comments.present? %>
+<%= l(:field_comments) %>: <%= @time_entry.comments %>
+<% end %>
+<%= l(:field_approved_on) %>: <%= format_time(@time_entry.approved_on) %>
+
+<%= l(:button_view_time_entries) %>: <%= @time_entry_url %> 

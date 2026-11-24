@@ -6,7 +6,11 @@ hideOnLoad();
   <% @members.each do |member| %>
     $("#member-<%= member.id %>").effect("highlight");
   <% end %>
-<% elsif @members.present? %>
-  <% errors = @members.collect {|m| m.errors.full_messages}.flatten.uniq.join(', ') %>
-  alert('<%= raw(escape_javascript(l(:notice_failed_to_save_members, :errors => errors))) %>');
+<% else %>
+  <% if @member_errors.present? %>
+    alert('<%= raw(escape_javascript(@member_errors.join(", "))) %>');
+  <% elsif @members.present? %>
+    <% errors = @members.collect {|m| m.errors.full_messages}.flatten.uniq.join(', ') %>
+    alert('<%= raw(escape_javascript(l(:notice_failed_to_save_members, :errors => errors))) %>');
+  <% end %>
 <% end %>

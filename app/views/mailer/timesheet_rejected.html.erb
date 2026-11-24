@@ -1,0 +1,11 @@
+<p><%= l(:mail_body_timesheet_rejected, 
+       :approver => @timesheet.approved_by.name, 
+       :hours => format_hours(@timesheet.total_hours), 
+       :date_range => @timesheet.date_range) %></p>
+
+<p><strong><%= l(:field_rejection_reason) %>:</strong></p>
+<p><%= simple_format(@timesheet.rejection_reason) %></p>
+
+<p>
+<%= l(:field_url) %>: <%= link_to @timesheet_url, @timesheet_url %>
+</p> 
