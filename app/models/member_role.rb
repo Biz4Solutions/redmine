@@ -72,7 +72,6 @@ class MemberRole < ApplicationRecord
 
     member.project.children.where(:inherit_members => true).ids.each do |subproject_id|
       child_member = Member.find_or_initialize_by(:project_id => subproject_id, :user_id => member.user_id)
-      child_member.allocation_percentage = 0 if child_member.new_record?
       child_member.member_roles << MemberRole.new(:role => role, :inherited_from => id)
       child_member.save!
     end
