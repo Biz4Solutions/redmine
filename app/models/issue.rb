@@ -21,6 +21,7 @@ class Issue < ApplicationRecord
   include Redmine::SafeAttributes
   include Redmine::Utils::DateCalculation
   include Redmine::I18n
+
   before_validation :default_assign, on: :create
   before_validation :force_default_value_on_noneditable_custom_fields, on: :create
   before_validation :clear_disabled_fields
@@ -59,6 +60,8 @@ class Issue < ApplicationRecord
                             :author_key => :author_id
 
   acts_as_mentionable :attributes => ['description']
+  acts_as_webhookable
+  include Issue::Webhookable
 
   DONE_RATIO_OPTIONS = %w(issue_field issue_status)
 
@@ -101,7 +104,7 @@ class Issue < ApplicationRecord
   scope :assigned_to, (lambda do |arg|
     arg = Array(arg).uniq
     ids = arg.map {|p| p.is_a?(Principal) ? p.id : p}
-    ids += arg.select {|p| p.is_a?(User)}.map(&:group_ids).flatten.uniq
+    ids += arg.grep(User).map(&:group_ids).flatten.uniq
     ids.compact!
     ids.any? ? where(:assigned_to_id => ids) : none
   end)
@@ -163,6 +166,15 @@ class Issue < ApplicationRecord
       end
       sql
     end
+  end
+
+  # Returns issues found by IDs with preloaded associations
+  def self.find_with_preloads(ids)
+    where(:id => ids).
+      preload(:project, :status, :tracker, :priority,
+              :author, :assigned_to, :relations_to,
+              {:custom_values => :custom_field}).
+      to_a
   end
 
   # Returns true if usr or current user is allowed to view the issue
@@ -308,9 +320,8 @@ class Issue < ApplicationRecord
         "created_on", "updated_on", "status_id", "closed_on"
       )
     self.custom_field_values =
-      issue.custom_field_values.inject({}) do |h, v|
-        h[v.custom_field_id] = v.value
-        h
+      issue.custom_field_values.to_h do |v|
+        [v.custom_field_id, v.value]
       end
     if options[:keep_status]
       self.status = issue.status
@@ -614,6 +625,11 @@ class Issue < ApplicationRecord
     if new_record? && !statuses_allowed.include?(status)
       self.status = statuses_allowed.first || default_status
     end
+    # Use the selected tracker's private default when the form has no explicit value.
+    if new_record? && tracker&.private_by_default? &&
+         !attrs.key?('is_private') && safe_attribute?('is_private', user)
+      attrs['is_private'] = '1'
+    end
     if (u = attrs.delete('assigned_to_id')) && safe_attribute?('assigned_to_id')
       self.assigned_to_id = u
     end
@@ -799,14 +815,14 @@ class Issue < ApplicationRecord
       if !valid_parent_project?(@parent_issue)
         errors.add :parent_issue_id, :invalid
       elsif (@parent_issue != parent) && (
-          self.would_reschedule?(@parent_issue) ||
-          @parent_issue.self_and_ancestors.any? do |a|
-            a.relations_from.any? do |r|
-              r.relation_type == IssueRelation::TYPE_PRECEDES &&
-                 r.issue_to.would_reschedule?(self)
-            end
+        self.would_reschedule?(@parent_issue) ||
+        @parent_issue.self_and_ancestors.any? do |a|
+          a.relations_from.any? do |r|
+            r.relation_type == IssueRelation::TYPE_PRECEDES &&
+               r.issue_to.would_reschedule?(self)
           end
-        )
+        end
+      )
         errors.add :parent_issue_id, :invalid
       elsif !closed? && @parent_issue.closed?
         # cannot attach an open issue to a closed parent
@@ -915,9 +931,11 @@ class Issue < ApplicationRecord
   # Returns the journals that are visible to user with their index
   # Used to display the issue history
   def visible_journals_with_index(user=User.current)
+    preloads = [:details, :updated_by]
+    preloads << (Setting.gravatar_enabled? ? {user: :email_address} : :user)
+
     result = journals.
-      preload(:details).
-      preload(:user => :email_address).
+      preload(*preloads).
       reorder(:created_on, :id).
       to_a
 
@@ -1955,6 +1973,8 @@ class Issue < ApplicationRecord
     if current_journal && !attachment.new_record?
       current_journal.journalize_attachment(attachment, :removed)
       current_journal.save
+      # Attachment removal via AJAX saves only the journal, so the usual issue update callback does not fire.
+      Webhook.trigger(event_name('updated'), self) unless saved_changes?
     end
   end
 
@@ -2078,12 +2098,24 @@ class Issue < ApplicationRecord
   end
 
   def add_auto_watcher
-    if author&.active? &&
-        author.allowed_to?(:add_issue_watchers, project) &&
+    if author.is_a?(User) &&
         author.pref.auto_watch_on?('issue_created') &&
-        self.watcher_user_ids.exclude?(author.id)
+        auto_watcher?(author)
       self.set_watcher(author, true)
     end
+
+    if assigned_to.is_a?(User) &&
+        assigned_to.pref.auto_watch_on?('issue_assigned_to_me') &&
+        auto_watcher?(assigned_to)
+      self.set_watcher(assigned_to, true)
+    end
+  end
+
+  def auto_watcher?(user)
+    user.active? &&
+      user.allowed_to?(:add_issue_watchers, project) &&
+      valid_watcher?(user) &&
+      !watched_by?(user)
   end
 
   def send_notification

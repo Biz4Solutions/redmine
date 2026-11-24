@@ -26,7 +26,7 @@ module IconsHelper
   def sprite_source(icon_name, sprite: DEFAULT_SPRITE, plugin: nil)
     if plugin
       "plugin_assets/#{plugin}/#{sprite}.svg"
-    elsif current_theme && current_theme.icons(sprite).include?(icon_name)
+    elsif current_theme && theme_icon_set(sprite).include?(icon_name)
       current_theme.image_path("#{sprite}.svg")
     else
       "#{sprite}.svg"
@@ -52,7 +52,7 @@ module IconsHelper
     if entry.is_dir?
       sprite_icon("folder", name, **)
     else
-      icon_name = icon_for_mime_type(Redmine::MimeType.css_class_of(name))
+      icon_name = icon_for_mime_type(Redmine::MimeType.of(name))
       sprite_icon(icon_name, name, **)
     end
   end
@@ -102,6 +102,11 @@ module IconsHelper
     sprite_icon(icon_name, **)
   end
 
+  def file_type_icon(mime_type, ...)
+    icon_name = icon_for_mime_type(mime_type)
+    sprite_icon(icon_name, ...)
+  end
+
   private
 
   def svg_sprite_icon(icon_name, size: DEFAULT_ICON_SIZE, style: :outline, sprite: DEFAULT_SPRITE, css_class: nil, rtl: false)
@@ -126,13 +131,36 @@ module IconsHelper
   end
 
   def icon_for_mime_type(mime)
-    if %w(text-plain text-x-c text-x-csharp text-x-java text-x-php
-          text-x-ruby text-xml text-css text-html text-css text-html
-          image-gif image-jpeg image-png image-tiff
-          application-pdf application-zip application-gzip application-javascript).include?(mime)
-      mime
+    if %w(text/x-c text/x-csharp text/x-java text/x-php
+          text/x-ruby text/xml text/css text/html text/css text/html
+          application/pdf application/zip application/gzip application/javascript).include?(mime)
+      icon_name = mime.tr('/', '-')
     else
-      "file"
+      top_level_type, subtype = mime.to_s.split('/')
+      icon_name =
+        case top_level_type
+        when 'audio' then 'file-music'
+        when 'image' then 'photo'
+        when 'text'
+          %w(markdown plain x-textile).include?(subtype) ? 'text-plain' : nil
+        when 'video' then 'movie'
+        else
+          # MIME type mapping
+          {
+            # Microsoft Office Open XML documents
+            # Do not add legacy Office formats (.doc, .xls, .ppt) here because
+            # Redmine does not provide attachment preview for these formats.
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'file-type-ppt',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'file-type-xls',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'file-type-docx'
+          }[mime.to_s]
+        end
     end
+    icon_name || 'file'
+  end
+
+  def theme_icon_set(sprite)
+    @theme_icon_sets ||= {}
+    @theme_icon_sets[sprite] ||= Set.new(current_theme&.icons(sprite))
   end
 end

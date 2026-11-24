@@ -254,7 +254,6 @@ it:
   error_can_not_delete_auth_source: "Questa modalità di autenticazione è in uso e non può essere eliminata."
   error_spent_on_future_date: "Impossibile registrare il tempo in una data futura"
   error_spent_on_closed_issue: Impossibile registrare il tempo su una segnalazione chiusa
-  error_not_allowed_to_log_time_for_other_users: "Non ti è consentito registrare il tempo speso di altri utenti"
   error_can_not_execute_macro_html: "Errore durante l'esecuzione della macro <strong>%{name}</strong> (%{error})"
   error_macro_does_not_accept_block: "Questa macro non accetta un blocco di testo"
   error_childpages_macro_no_argument: "Questa macro può essere chiamata senza argomenti solo dalle pagine wiki"
@@ -339,6 +338,7 @@ it:
   field_is_public: Pubblico
   field_parent: Sottoprogetto di
   field_is_in_roadmap: Segnalazioni mostrate nella roadmap
+  field_private_by_default: "Segnalazioni private in modo predefinito"
   field_login: Utente
   field_mail_notification: Notifiche via email
   field_admin: Amministratore
@@ -385,6 +385,7 @@ it:
   field_time_zone: Fuso orario
   field_searchable: Ricercabile
   field_default_value: "Valore predefinito"
+  field_default_value_mode: "Modalità del valore predefinito"
   field_comments_sorting: Mostra commenti
   field_parent_title: "Pagina padre"
   field_editable: Modificabile
@@ -510,6 +511,7 @@ it:
   setting_gantt_items_limit: Massimo numero di oggetti da visualizzare sul diagramma di gantt
   setting_gantt_months_limit: Numero massimo di mesi visualizzati nel diagramma di Gantt
   setting_issue_group_assignment: Permetti di assegnare una segnalazione a gruppi
+  setting_assignee_dropdown_display_format: "Formato del menu a tendina degli assegnatari"
   setting_default_issue_start_date_to_creation_date: Usa la data corrente come data d'inizio per le nuove segnalazioni
   setting_commit_cross_project_ref: Permetti alle segnalazioni degli altri progetti di essere referenziate e risolte
   setting_unsubscribe: Consentire agli utenti di cancellare il proprio account
@@ -519,6 +521,7 @@ it:
   setting_thumbnails_size: "Dimensioni delle miniature (in pixel)"
   setting_non_working_week_days: Giorni non lavorativi
   setting_jsonp_enabled: Abilita supporto a JSONP
+  setting_webhooks_enabled: "Abilita webhook"
   setting_default_projects_tracker_ids: "Tracker predefiniti per i nuovi progetti"
   setting_mail_handler_excluded_filenames: Escludi allegati per nome
   setting_force_default_language_for_anonymous: "Forza la lingua predefinita per gli utenti anonimi"
@@ -625,6 +628,8 @@ it:
   permission_view_project: Visualizza progetti
   permission_search_project: Cerca progetti
   permission_view_members: Visualizza membri del progetto
+  permission_use_webhooks: "Usa webhook"
+
 
   project_module_issue_tracking: Tracking delle segnalazioni
   project_module_time_tracking: "Tracciamento del tempo"
@@ -736,6 +741,7 @@ it:
   label_no_preview: Nessuna anteprima disponibile
   label_no_preview_alternative_html: Nessuna anteprima disponibile. Al suo posto %{link}.
   label_no_preview_download: Download
+  label_open_in_full_view: "Apri a schermo intero"
   label_change_status: Cambia stato
   label_history: Cronologia
   label_attachment: File
@@ -767,7 +773,6 @@ it:
   label_confirmation: Conferma
   label_export_to: "Disponibile anche in:"
   label_read: Leggi...
-  label_public_projects: Progetti pubblici
   label_open_issues: aperta
   label_open_issues_plural: aperte
   label_closed_issues: chiusa
@@ -793,6 +798,8 @@ it:
   label_all: tutti
   label_any: "qualsiasi"
   label_none: nessuno
+  label_absolute: "Assoluta"
+  label_relative: "Relativa"
   label_nobody: nessuno
   label_next: Successivo
   label_previous: Precedente
@@ -803,8 +810,6 @@ it:
   label_months_from: mesi da
   label_gantt: Gantt
   label_internal: Interno
-  label_last_changes: "ultime %{count} modifiche"
-  label_change_view_all: Tutte le modifiche
   label_comment: Commento
   label_comment_plural: Commenti
   label_x_comments:
@@ -842,7 +847,6 @@ it:
   label_last_month: "mese scorso"
   label_next_month: prossimo mese
   label_this_year: quest'anno
-  label_date_range: Intervallo di date
   label_less_than_ago: meno di giorni fa
   label_more_than_ago: più di giorni fa
   label_ago: giorni fa
@@ -896,7 +900,6 @@ it:
   label_wiki_page_new: Nuova pagina wiki
   label_index_by_title: "Indice per titolo"
   label_index_by_date: "Indice per data"
-  label_current_version: Versione corrente
   label_preview: Anteprima
   label_feed_plural: Feed
   label_changes_details: "Dettagli di tutte le modifiche"
@@ -924,9 +927,9 @@ it:
   label_applied_status: Stato applicato
   label_loading: Caricamento...
   label_relation_new: Nuova relazione
-  label_relation_delete: Elimina relazione
+  label_relation_remove: "Rimuovi relazione"
   label_relates_to: Correlata a
-  label_delete_link_to_subtask: "Elimina collegamento alla sottoattività"
+  label_subtask_remove: "Rimuovi sottoattività"
   label_duplicates: "È un duplicato di"
   label_duplicated_by: "Ha un duplicato"
   label_blocks: Blocca
@@ -955,8 +958,6 @@ it:
   label_year: Anno
   label_month: Mese
   label_week: Settimana
-  label_date_from: Dal
-  label_date_to: Al
   label_language_based: "Basato sulla lingua dell'utente"
   label_sort_by: "Ordina per %{value}"
   label_send_test_email: Invia una email di prova
@@ -984,6 +985,7 @@ it:
   label_user_mail_option_only_my_events: Solo se sono un osservatore o sono coinvolto
   label_user_mail_option_only_assigned: Solo se sono un osservatore o sono assegnatario
   label_user_mail_option_only_owner: Solo se sono un osservatore o sono autore
+  label_user_mail_option_only_my_watches: "Solo se sono un osservatore"
   label_user_mail_no_self_notified: "Non voglio notifiche riguardanti modifiche da me apportate"
   label_user_mail_notify_about_high_priority_issues_html: "Notificami anche delle segnalazioni con priorità <em>%{prio}</em> o superiore"
   label_registration_activation_by_email: Attivazione autonoma dell'account tramite verifica via email
@@ -1002,10 +1004,10 @@ it:
   label_ldaps_warning: Si consiglia di utilizzare una connessione LDAPS crittografata con controllo del certificato per evitare qualsiasi manipolazione durante il processo di autenticazione.
   label_downloads_abbr: D/L
   label_optional_description: Descrizione opzionale
-  label_add_another_file: Aggiungi un altro file
   label_auto_watch_on: Osserva automaticamente
   label_auto_watch_on_issue_created: Segnalazioni create da me
   label_auto_watch_on_issue_contributed_to: Segnalazioni a cui ho contribuito
+  label_auto_watch_on_issue_assigned_to_me: "Segnalazioni assegnate a me"
   label_preferences: Preferenze
   label_chronological_order: In ordine cronologico
   label_reverse_chronological_order: In ordine cronologico inverso
@@ -1179,16 +1181,37 @@ it:
   label_edited: Modificato
   label_time_by_author: "%{time} da %{author}"
   label_involved_principals: Autore / Assegnatario precedente
+  label_assignee_dropdown_display_format_users_then_groups: "Prima gli utenti, poi i gruppi"
+  label_assignee_dropdown_display_format_groups_then_users: "Prima i gruppi, poi gli utenti"
+  label_assignee_dropdown_display_format_users_by_group: "Utenti raggruppati per gruppo"
   label_progressbar: Barra di avanzamento
   label_oauth_permission_admin: Amministra questo Redmine
   label_oauth_admin_access: Amministrazione
   label_oauth_application_plural: Applicazioni
   label_oauth_authorized_application_plural: Applicazioni autorizzate
+  label_webhook_plural: "Webhook"
+  label_webhook_new: "Nuovo webhook"
+  label_webhook_edit: "Modifica webhook"
+  label_webhook_events: "Eventi"
+  label_integrations: "Integrazioni"
   label_alert_note: Nota
   label_alert_tip: Suggerimento
   label_alert_warning: Avvertimento
   label_alert_caution: Attenzione
   label_alert_important: Importante
+  label_last_used_on: "Ultimo utilizzo: %{value} fa"
+  label_never_used: "Mai utilizzato"
+  label_enable_default_issue_due_date_offset: "Abilita la scadenza predefinita per le nuove segnalazioni"
+  setting_default_issue_due_date_offset: "Scadenza predefinita per le nuove segnalazioni"
+  label_days_relative_to_today: "giorni rispetto a oggi"
+
+  webhook_event_created: "%{object_name} creato"
+  webhook_event_updated: "%{object_name} aggiornato"
+  webhook_event_deleted: "%{object_name} eliminato"
+  webhook_url_info: "Redmine invierà una richiesta POST a questo URL ogni volta che si verifica uno degli eventi selezionati in uno dei progetti selezionati."
+  webhook_secret_info_html: "Se specificato, Redmine lo userà per generare una firma hash inviata con ogni consegna come valore dell'header X-Redmine-Signature-256."
+  webhook_secret_keep_info: "Il segreto di un altro utente non viene mostrato. Lascia vuoto questo campo per mantenerlo invariato."
+  webhook_disabled_info_html: "I webhook sono disabilitati, quindi nessuno dei webhook seguenti viene attivato. Sono comunque elencati qui per poterli verificare o rimuovere. I webhook possono essere abilitati nelle impostazioni %{link}."
 
   button_login: Entra
   button_submit: Invia
@@ -1198,12 +1221,15 @@ it:
   button_collapse_all: Comprimi tutto
   button_expand_all: Espandi tutto
   button_delete: Elimina
+  button_remove: "Rimuovi"
+  button_remove_from_group: "Rimuovi dal gruppo"
   button_create: Crea
   button_create_and_continue: Crea e continua
   button_test: Prova
   button_edit: Modifica
   button_edit_associated_wikipage: "Modifica la pagina wiki associata: %{page_title}"
   button_add: Aggiungi
+  button_add_to_group: "Aggiungi al gruppo"
   button_change: Cambia
   button_apply: Applica
   button_clear: Pulisci
@@ -1287,6 +1313,7 @@ it:
   text_project_archive_confirmation: Vuoi davvero archiviare il progetto '%{value}'?
   text_users_bulk_destroy_head: 'Stai per eliminare i seguenti utenti e rimuovere tutti i riferimenti a loro. Questa operazione non può essere annullata. Spesso, bloccare gli utenti anziché eliminarli è la soluzione migliore.'
   text_users_bulk_destroy_confirm: 'Per confermare, inserisci "%{yes}" qui sotto.'
+  text_users_remove_from_group_confirmation: "Sei sicuro di voler rimuovere gli utenti selezionati dal gruppo %{group}?"
   text_workflow_edit: Seleziona un ruolo ed un tracker per modificare il workflow
   text_are_you_sure: "Sei sicuro?"
   text_journal_changed: "%{label} modificata da %{old} a %{new}"
@@ -1323,14 +1350,13 @@ it:
   text_issues_destroy_confirmation: 'Sei sicuro di voler eliminare le segnalazioni selezionate?'
   text_issues_destroy_descendants_confirmation: Questo eliminerà anche %{count} sottoattività.
   text_time_entries_destroy_confirmation: "Sei sicuro di voler eliminare le registrazioni di tempo selezionate?"
-  text_select_project_modules: 'Seleziona i moduli abilitati per questo progetto:'
   text_default_administrator_account_changed: L'account amministrativo predefinito è stato modificato
   text_file_repository_writable: "Directory degli allegati scrivibile"
-  text_plugin_assets_writable: "Directory delle risorse (assets) dei plugin scrivibile"
   text_all_migrations_have_been_run: Sono state eseguite tutte le migrazioni del database
   text_minimagick_available: MiniMagick disponibile (opzionale)
   text_convert_available: ImageMagick convert disponibile (opzionale)
   text_gs_available: "Supporto PDF di ImageMagick disponibile (opzionale)"
+  text_pandoc_available: "Pandoc disponibile (opzionale)"
   text_default_active_job_queue_changed: "Il Queue adapter predefinito, adatto solo per sviluppo/test, è stato modificato"
   text_destroy_time_entries_question: "%{hours} ore risultano spese sulle segnalazioni che stai per eliminare. Cosa vuoi fare?"
   text_destroy_time_entries: Elimina le ore segnalate
@@ -1373,7 +1399,7 @@ it:
   text_no_subject: "nessun oggetto"
   text_allowed_queries_to_select: Solo query pubbliche (per tutti gli utenti) selezionabili
   text_setting_config_change: "Puoi configurare il comportamento in config/configuration.yml. Riavvia l'applicazione dopo averlo modificato."
-  text_setting_gravatar_default_initials_html: Le iniziali degli utenti vengono inviate a <a href="https://www.gravatar.com">https://www.gravatar.com</a> per generare i loro avatar.
+  text_setting_gravatar_default_initials_html: Le iniziali degli utenti vengono inviate a <a href="%{url}">%{url}</a> per generare i loro avatar.
   text_oauth_admin_permission: Accesso amministrativo completo. Se autorizzata da un Amministratore, questa applicazione potrà leggere e scrivere tutti i dati e impersonare altri utenti.
   text_oauth_admin_permission_info: "Questa applicazione richiede l'accesso amministrativo completo. Se sei un Amministratore (o lo diventerai in futuro), l'applicazione potrà leggere e scrivere tutti i dati e impersonare altri utenti per tuo conto. Se vuoi evitare questo problema, autorizzala come utente senza privilegi di Amministratore."
   text_oauth_copy_secret_now: "Salva subito il segreto in un luogo sicuro: non verrà mostrato di nuovo."
@@ -1406,9 +1432,7 @@ it:
   enumeration_doc_categories: Categorie di documenti
   enumeration_activities: Attività (time tracking)
   enumeration_system_activity: Attività di sistema
-  description_filter: Filtro
   description_search: Campo di ricerca
-  description_choose_project: Progetti
   description_project_scope: Ambito della ricerca
   description_notes: Note
   description_message_content: Contenuto del messaggio

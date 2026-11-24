@@ -23,6 +23,11 @@ class AttachmentTest < ActiveSupport::TestCase
   def setup
     User.current = nil
     set_tmp_attachments_directory
+    Attachment.clear_markdownized_previews
+  end
+
+  def teardown
+    Attachment.clear_markdownized_previews
   end
 
   def test_container_for_new_attachment_should_be_nil
@@ -78,6 +83,7 @@ class AttachmentTest < ActiveSupport::TestCase
 
   def test_shortened_filename_if_extension_too_long
     file = mock_file_with_options(:original_filename => "file.#{'a'*250}")
+
     a = Attachment.new(:container => Issue.find(1),
                        :file => file,
                        :author => User.find(1))
@@ -99,7 +105,7 @@ class AttachmentTest < ActiveSupport::TestCase
     copy = a.copy
 
     assert_save copy
-    copy = Attachment.order('id DESC').first
+    copy = Attachment.order(id: :desc).first
     %w(filename filesize content_type author_id created_on description digest disk_filename disk_directory diskfile).each do |attribute|
       assert_equal a.send(attribute), copy.send(attribute), "#{attribute} was different"
     end
@@ -392,7 +398,7 @@ class AttachmentTest < ActiveSupport::TestCase
           'description' => 'test'
         })
     end
-    attachment = Attachment.order('id DESC').first
+    attachment = Attachment.order(id: :desc).first
     assert_equal issue, attachment.container
     assert_equal 'testfile.txt', attachment.filename
     assert_equal 57, attachment.filesize
@@ -479,11 +485,11 @@ class AttachmentTest < ActiveSupport::TestCase
     assert(
       Attachment.update_attachments(
         attachments,
-        {2 => {:filename => 'newname?.txt'}}
+        {2 => {:filename => "new\x00name?.txt"}}
       )
     )
     attachment = Attachment.find(2)
-    assert_equal 'newname_.txt', attachment.filename
+    assert_equal 'new_name_.txt', attachment.filename
   end
 
   def test_latest_attach
@@ -530,6 +536,7 @@ class AttachmentTest < ActiveSupport::TestCase
 
   def test_thumbnailable_should_be_true_for_images
     skip unless convert_installed?
+    assert_equal true, Attachment.new(:filename => 'test.avif').thumbnailable?
     assert_equal true, Attachment.new(:filename => 'test.jpg').thumbnailable?
     assert_equal true, Attachment.new(:filename => 'test.webp').thumbnailable?
   end
@@ -541,6 +548,72 @@ class AttachmentTest < ActiveSupport::TestCase
 
   def test_thumbnailable_should_be_false_for_non_images
     assert_equal false, Attachment.new(:filename => 'test.txt').thumbnailable?
+  end
+
+  def test_thumbnailable_should_be_true_for_illustrator_files
+    Redmine::Thumbnail.stubs(:convert_available?).returns(true)
+    Redmine::Thumbnail.stubs(:gs_available?).returns(true)
+    assert_equal true, Attachment.new(:filename => 'test.ai').thumbnailable?
+  end
+
+  def test_markdownized_previewable_should_be_true_for_supported_extensions
+    skip unless Redmine::Markdownizer.available?
+
+    attachment = Attachment.new(
+      :container => Issue.find(1),
+      :file => uploaded_test_file(
+        "msword.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ),
+      :author => User.find(1)
+    )
+    assert attachment.save
+    assert_equal true, attachment.markdownized_previewable?
+  end
+
+  def test_markdownized_previewable_should_be_true_for_supported_libreoffice_extensions
+    skip unless Redmine::Markdownizer.available?
+
+    attachment = Attachment.new(
+      :container => Issue.find(1),
+      :file => uploaded_test_file(
+        "libreoffice-writer.odt",
+        "application/vnd.oasis.opendocument.text"
+      ),
+      :author => User.find(1)
+    )
+    assert attachment.save
+    assert_equal true, attachment.markdownized_previewable?
+  end
+
+  def test_markdownized_previewable_should_be_false_for_non_supported_extensions
+    skip unless Redmine::Markdownizer.available?
+
+    attachment = Attachment.new(
+      :container => Issue.find(1),
+      :file => uploaded_test_file("testfile.txt", "text/plain"),
+      :author => User.find(1)
+    )
+    assert attachment.save
+    assert_equal false, attachment.markdownized_previewable?
+  end
+
+  def test_delete_from_disk_should_delete_markdownized_preview_cache
+    attachment = Attachment.create!(
+      :container => Issue.find(1),
+      :file => uploaded_test_file(
+        "msword.docx",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ),
+      :author => User.find(1)
+    )
+    preview = attachment.markdownized_preview_cache_path
+    FileUtils.mkdir_p(File.dirname(preview))
+    File.write(preview, "preview")
+    assert File.exist?(preview)
+
+    attachment.send(:delete_from_disk!)
+    assert_not File.exist?(preview)
   end
 
   if convert_installed?
@@ -675,6 +748,18 @@ class AttachmentTest < ActiveSupport::TestCase
     }
     to_test.each do |attachment, expected|
       assert_equal expected, attachment.is_text?, attachment.inspect
+    end
+  end
+
+  def test_is_pdf
+    to_test = {
+      'report.pdf' => true,
+      # Illustrator files are not PDF files, even though some of them are
+      # PDF compatible
+      'logo.ai' => false,
+    }
+    to_test.each do |filename, expected|
+      assert_equal expected, Attachment.new(:filename => filename).is_pdf?, filename
     end
   end
 end

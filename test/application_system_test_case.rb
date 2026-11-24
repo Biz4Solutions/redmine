@@ -82,6 +82,13 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     assert_current_path '/my/page', :ignore_query => true
   end
 
+  def sign_out_user
+    find('#account .dropdown-trigger').click
+    click_link 'Sign out'
+    # Make sure the redirection after the sign out has completed
+    assert_current_path '/', :ignore_query => true
+  end
+
   def wait_for_ajax
     Timeout.timeout(Capybara.default_max_wait_time) do
       loop until page.evaluate_script("jQuery.active").zero?

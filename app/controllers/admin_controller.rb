@@ -22,6 +22,7 @@ class AdminController < ApplicationController
   self.main_menu = false
   menu_item :projects, :only => :projects
   menu_item :plugins, :only => :plugins
+  menu_item :webhooks, :only => :webhooks
   menu_item :info, :only => :info
 
   before_action :require_admin
@@ -46,6 +47,10 @@ class AdminController < ApplicationController
 
   def plugins
     @plugins = Redmine::Plugin.all
+  end
+
+  def webhooks
+    @webhooks = Webhook.eager_load(:user).preload(:projects).order(*User.fields_for_order_statement, :url)
   end
 
   # Loads the default configuration
@@ -79,7 +84,8 @@ class AdminController < ApplicationController
       [:text_all_migrations_have_been_run, !ActiveRecord::Base.connection.pool.migration_context.needs_migration?],
       [:text_minimagick_available,     Object.const_defined?(:MiniMagick)],
       [:text_convert_available,        Redmine::Thumbnail.convert_available?],
-      [:text_gs_available,             Redmine::Thumbnail.gs_available?]
+      [:text_gs_available,             Redmine::Thumbnail.gs_available?],
+      [:text_pandoc_available, Redmine::Markdownizer.available?]
     ]
     @checklist << [:text_default_active_job_queue_changed, Rails.application.config.active_job.queue_adapter != :async] if Rails.env.production?
   end

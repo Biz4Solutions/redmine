@@ -60,6 +60,8 @@ class Project < ApplicationRecord
                           :class_name => 'IssueCustomField',
                           :join_table => "#{table_name_prefix}custom_fields_projects#{table_name_suffix}",
                           :association_foreign_key => 'custom_field_id'
+  has_and_belongs_to_many :webhooks
+
   # Default Custom Query
   belongs_to :default_issue_query, :class_name => 'IssueQuery'
 
@@ -837,7 +839,7 @@ class Project < ApplicationRecord
   #   project.disable_module!(project.enabled_modules.first)
   def disable_module!(target)
     target = enabled_modules.detect{|mod| target.to_s == mod.name} unless enabled_modules.include?(target)
-    target.destroy unless target.blank?
+    (target.presence&.destroy)
   end
 
   safe_attributes(
@@ -941,7 +943,7 @@ class Project < ApplicationRecord
 
   # Returns an auto-generated project identifier based on the last identifier used
   def self.next_identifier
-    p = Project.order('id DESC').first
+    p = Project.order(id: :desc).first
     p.nil? ? nil : p.identifier.to_s.succ
   end
 
@@ -1185,9 +1187,8 @@ class Project < ApplicationRecord
       new_issue.project = self
       # Changing project resets the custom field values
       # TODO: handle this in Issue#project=
-      new_issue.custom_field_values = issue.custom_field_values.inject({}) do |h, v|
-        h[v.custom_field_id] = v.value
-        h
+      new_issue.custom_field_values = issue.custom_field_values.to_h do |v|
+        [v.custom_field_id, v.value]
       end
       # Reassign fixed_versions by name, since names are unique per project
       if issue.fixed_version && issue.fixed_version.project == project
@@ -1274,9 +1275,9 @@ class Project < ApplicationRecord
   # Copies members from +project+
   def copy_members(project)
     # Copy users first, then groups to handle members with inherited and given roles
-    members_to_copy = []
-    members_to_copy += project.memberships.select {|m| m.principal.is_a?(User)}
-    members_to_copy += project.memberships.select {|m| !m.principal.is_a?(User)}
+    user_memberships, group_memberships =
+      project.memberships.partition {|m| m.principal.is_a?(User)}
+    members_to_copy = user_memberships + group_memberships
 
     members_to_copy.each do |member|
       new_member = Member.new

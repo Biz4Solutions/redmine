@@ -23,7 +23,7 @@ class News < ApplicationRecord
 
   belongs_to :project
   belongs_to :author, :class_name => 'User'
-  has_many :comments, lambda {order("created_on")}, :as => :commented, :dependent => :delete_all
+  has_many :comments, lambda {order(:created_on)}, :as => :commented, :dependent => :delete_all
 
   validates_presence_of :title, :description
   validates_length_of :title, :maximum => 60
@@ -37,6 +37,8 @@ class News < ApplicationRecord
   acts_as_activity_provider :scope => proc {preload(:project, :author)},
                             :author_key => :author_id
   acts_as_watchable
+  acts_as_webhookable
+  include News::Webhookable
 
   after_create :add_author_as_watcher
   after_create_commit :send_notification

@@ -445,7 +445,7 @@ class Mailer < ActionMailer::Base
     # Don't send a notification to the dummy email address when changing the password
     # of the default admin account which is required after the first login
     # TODO: maybe not the best way to handle this
-    return if user.admin? && user.login == 'admin' && user.mail == 'admin@example.net'
+    return if user.admin? && user.login == 'admin' && user.mail == 'admin@dummy.invalid'
 
     deliver_security_notification(
       user,
@@ -761,7 +761,7 @@ class Mailer < ActionMailer::Base
   #   => ["foo@example.net", "bar@example.net"]
   def self.email_addresses(arg)
     arr = Array.wrap(arg)
-    mails = arr.reject {|a| a.is_a? Principal}
+    mails = arr.grep_v(Principal)
     users = arr - mails
     if users.any?
       mails += EmailAddress.

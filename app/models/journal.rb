@@ -217,7 +217,7 @@ class Journal < ApplicationRecord
   def self.preload_journals_details_custom_fields(journals)
     field_ids = journals.map(&:details).flatten.select {|d| d.property == 'cf'}.map(&:prop_key).uniq
     if field_ids.any?
-      fields_by_id = CustomField.where(:id => field_ids).inject({}) {|h, f| h[f.id] = f; h}
+      fields_by_id = CustomField.where(:id => field_ids).index_by { |f| f.id }
       journals.each do |journal|
         journal.details.each do |detail|
           if detail.property == 'cf'
@@ -232,13 +232,11 @@ class Journal < ApplicationRecord
   # Stores the values of the attributes and custom fields of the journalized object
   def start
     if journalized
-      @attributes_before_change = journalized.journalized_attribute_names.inject({}) do |h, attribute|
-        h[attribute] = journalized.send(attribute)
-        h
+      @attributes_before_change = journalized.journalized_attribute_names.index_with do |attribute|
+        journalized.send(attribute)
       end
-      @custom_values_before_change = journalized.custom_field_values.inject({}) do |h, c|
-        h[c.custom_field_id] = c.value
-        h
+      @custom_values_before_change = journalized.custom_field_values.to_h do |c|
+        [c.custom_field_id, c.value]
       end
     end
     self
@@ -356,12 +354,25 @@ class Journal < ApplicationRecord
   end
 
   def add_watcher
-    if user&.active? &&
-        user.allowed_to?(:add_issue_watchers, project) &&
-        user.pref.auto_watch_on?('issue_contributed_to') &&
-        !Watcher.any_watched?(Array.wrap(journalized), user)
+    if user.is_a?(User) &&
+       user.pref.auto_watch_on?('issue_contributed_to') &&
+       valid_watcher?(user)
       journalized.set_watcher(user, true)
     end
+
+    assignee = journalized.assigned_to
+    if assignee.is_a?(User) &&
+       assignee.pref.auto_watch_on?('issue_assigned_to_me') &&
+       valid_watcher?(assignee)
+      journalized.set_watcher(assignee, true)
+    end
+  end
+
+  def valid_watcher?(user)
+    user.active? &&
+      user.allowed_to?(:add_issue_watchers, journalized.project) &&
+      journalized.valid_watcher?(user) &&
+      !journalized.watched_by?(user)
   end
 
   def send_notification

@@ -185,14 +185,6 @@
   svg: file-type-css
 - name: text-html
   svg: file-type-html
-- name: image-gif
-  svg: file
-- name: image-jpeg
-  svg: file-type-jpg
-- name: image-png
-  svg: file-type-png
-- name: image-tiff
-  svg: file
 - name: application-javascript
   svg: file-type-js
 - name: application-pdf
@@ -242,6 +234,8 @@
   svg: loader-2
 - name: hourglass
   svg: hourglass
+- name: webhook
+  svg: webhook
 - name: apps
   svg: apps
 - name: shield-check
@@ -250,3 +244,21 @@
   svg: arrow-narrow-left
 - name: arrow-narrow-right
   svg: arrow-narrow-right
+- name: photo
+  svg: photo
+- name: movie
+  svg: movie
+- name: file-music
+  svg: file-music
+- name: file-type-docx
+  svg: file-type-docx
+- name: file-type-xls
+  svg: file-type-xls
+- name: file-type-ppt
+  svg: file-type-ppt
+- name: maximize
+  svg: maximize
+- name: link-add
+  svg: link-plus
+- name: unknown
+  svg: help-circle

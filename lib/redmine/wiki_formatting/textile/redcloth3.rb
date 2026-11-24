@@ -514,7 +514,7 @@ class RedCloth3 < String
         atts
     end
 
-    STYLES_RE = /^(color|(min-|max-)?+(width|height)|border|background|padding|margin|font|text|float)(-[a-z]+)*:\s*((\d+%?|\d+px|\d+(\.\d+)?em|#[0-9a-f]+|[a-z]+)\s*)+$/i
+    STYLES_RE = /^(color|(min-|max-)?+(width|height)|border|background|padding|margin|font|text|float)(-[a-z]+)*:\s*((\d+%?|\d+px|\d+(\.\d+)?em|#[0-9a-f]+|[a-z]+(?:-[a-z]+)*)\s*)+$/i
 
     def sanitize_styles(str)
       styles = str.split(";").map(&:strip)
@@ -1097,11 +1097,10 @@ class RedCloth3 < String
                         @pre_list.last << line
                         line = +""
                     else
-                        ### htmlesc is disabled between CODE tags which will be parsed with highlighter
-                        ### Regexp in formatter.rb is : /<code\s+class="(\w+)">\s?(.+)/m
-                        ### NB: some changes were made not to use $N variables, because we use "match"
-                        ###   and it breaks following lines
-                        htmlesc(aftertag, :NoQuotes) if aftertag && escape_aftertag && !first.match(/<code\s+class="(\w+)">/)
+                        # Always escape: skipping escape for <code class="..."> enabled stored XSS
+                        # because the unescaped HTML was later re-inserted via smooth_offtags.
+                        # Rouge highlights node.inner_text, so escaping here does not break it.
+                        htmlesc(aftertag, :NoQuotes) if aftertag && escape_aftertag
                         line = "<redpre##{@pre_list.length}>"
                         first =~ /<#{OFFTAGS}([^>]*)>/o
                         tag = $1

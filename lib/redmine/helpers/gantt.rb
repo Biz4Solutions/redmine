@@ -30,8 +30,14 @@ module Redmine
 
       # Relation types that are rendered
       DRAW_TYPES = {
-        IssueRelation::TYPE_BLOCKS   => {:landscape_margin => 16, :color => '#F34F4F'},
-        IssueRelation::TYPE_PRECEDES => {:landscape_margin => 20, :color => '#628FEA'}
+        IssueRelation::TYPE_BLOCKS   => {
+          :landscape_margin => 16,
+          :color => '#fa5252' # oc-red-6
+        },
+        IssueRelation::TYPE_PRECEDES => {
+          :landscape_margin => 20,
+          :color => '#228be6' # oc-blue-6
+        }
       }.freeze
 
       UNAVAILABLE_COLUMNS = [:tracker, :id, :subject]
@@ -87,7 +93,7 @@ module Redmine
         if options.has_key?(:max_rows)
           @max_rows = options[:max_rows]
         else
-          @max_rows = Setting.gantt_items_limit.blank? ? nil : Setting.gantt_items_limit.to_i
+          @max_rows = (Setting.gantt_items_limit.presence&.to_i)
         end
       end
 
@@ -353,7 +359,7 @@ module Redmine
           data_options = {}
           data_options[:collapse_expand] = "issue-#{issue.id}"
           data_options[:number_of_rows] = number_of_rows
-          style = "position: absolute;top: #{options[:top]}px; font-size: 0.8em;"
+          style = "position: absolute;inset-block-start: #{options[:top]}px; font-size: 0.8em;"
           content =
             view.content_tag(
               :div, view.column_content(options[:column], issue),
@@ -812,7 +818,10 @@ module Redmine
           }
         end
         if has_children
-          content = view.content_tag(:span, view.sprite_icon('angle-down').html_safe, :class => 'icon icon-expanded expander') + content
+          content = view.content_tag(:span,
+                                     view.sprite_icon('angle-down', rtl: true).html_safe,
+                                     :class => 'icon icon-expanded expander',
+                                     :data => {:action => 'click->gantt--subjects#handleEntryClick'}) + content
           tag_options[:class] += ' open'
         else
           if params[:indent]
@@ -820,7 +829,7 @@ module Redmine
             params[:indent] += 18
           end
         end
-        style = "position: absolute;top:#{params[:top]}px;left:#{params[:indent]}px;"
+        style = "position: absolute;inset-block-start:#{params[:top]}px;inset-inline-start:#{params[:indent]}px;"
         style += "width:#{params[:subject_width] - params[:indent]}px;" if params[:subject_width]
         tag_options[:style] = style
         output = view.content_tag(:div, content, tag_options)
@@ -883,8 +892,8 @@ module Redmine
         if coords[:bar_start] && coords[:bar_end]
           width = coords[:bar_end] - coords[:bar_start] - 2
           style = +""
-          style << "top:#{params[:top]}px;"
-          style << "left:#{coords[:bar_start]}px;"
+          style << "inset-block-start:#{params[:top]}px;"
+          style << "inset-inline-start:#{coords[:bar_start]}px;"
           style << "width:#{width}px;"
           html_id = "task-todo-issue-#{object.id}" if object.is_a?(Issue)
           html_id = "task-todo-version-#{object.id}" if object.is_a?(Version)
@@ -903,8 +912,8 @@ module Redmine
           if coords[:bar_late_end]
             width = coords[:bar_late_end] - coords[:bar_start] - 2
             style = +""
-            style << "top:#{params[:top]}px;"
-            style << "left:#{coords[:bar_start]}px;"
+            style << "inset-block-start:#{params[:top]}px;"
+            style << "inset-inline-start:#{coords[:bar_start]}px;"
             style << "width:#{width}px;"
             output << view.content_tag(:div, '&nbsp;'.html_safe,
                                        :style => style,
@@ -914,8 +923,8 @@ module Redmine
           if coords[:bar_progress_end]
             width = coords[:bar_progress_end] - coords[:bar_start] - 2
             style = +""
-            style << "top:#{params[:top]}px;"
-            style << "left:#{coords[:bar_start]}px;"
+            style << "inset-block-start:#{params[:top]}px;"
+            style << "inset-inline-start:#{coords[:bar_start]}px;"
             style << "width:#{width}px;"
             html_id = "task-done-issue-#{object.id}" if object.is_a?(Issue)
             html_id = "task-done-version-#{object.id}" if object.is_a?(Version)
@@ -930,8 +939,8 @@ module Redmine
         if markers
           if coords[:start]
             style = +""
-            style << "top:#{params[:top]}px;"
-            style << "left:#{coords[:start]}px;"
+            style << "inset-block-start:#{params[:top]}px;"
+            style << "inset-inline-start:#{coords[:start]}px;"
             style << "width:15px;"
             output << view.content_tag(:div, '&nbsp;'.html_safe,
                                        :style => style,
@@ -940,8 +949,8 @@ module Redmine
           end
           if coords[:end]
             style = +""
-            style << "top:#{params[:top]}px;"
-            style << "left:#{coords[:end]}px;"
+            style << "inset-block-start:#{params[:top]}px;"
+            style << "inset-inline-start:#{coords[:end]}px;"
             style << "width:15px;"
             output << view.content_tag(:div, '&nbsp;'.html_safe,
                                        :style => style,
@@ -952,8 +961,8 @@ module Redmine
         # Renders the label on the right
         if label
           style = +""
-          style << "top:#{params[:top]}px;"
-          style << "left:#{(coords[:bar_end] || 0) + 8}px;"
+          style << "inset-block-start:#{params[:top]}px;"
+          style << "inset-inline-start:#{(coords[:bar_end] || 0) + 8}px;"
           style << "width:15px;"
           output << view.content_tag(:div, label,
                                      :style => style,
@@ -970,8 +979,8 @@ module Redmine
                                 :class => 'toggle-selection')
           style = +""
           style << "position: absolute;"
-          style << "top:#{params[:top]}px;"
-          style << "left:#{coords[:bar_start]}px;"
+          style << "inset-block-start:#{params[:top]}px;"
+          style << "inset-inline-start:#{coords[:bar_start]}px;"
           style << "width:#{coords[:bar_end] - coords[:bar_start]}px;"
           style << "height:12px;"
           output << view.content_tag(:div, s.html_safe,

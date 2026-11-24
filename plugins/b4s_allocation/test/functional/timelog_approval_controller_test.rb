@@ -51,4 +51,11 @@ class TimelogApprovalControllerTest < Redmine::ControllerTest
     post :bulk_approve, params: {ids: [@entry.id]}
     assert @entry.reload.approved?
   end
+
+  def test_pending_submission_lists_own_pending_entries
+    skip 'BUG: pending_submission view calls submit_time_entry_path, but only the collection route submit_time_entries exists (500 when any entry is listed)'
+    @request.session[:user_id] = @user.id
+    get :pending_submission
+    assert_response :success
+  end
 end

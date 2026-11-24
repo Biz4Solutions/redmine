@@ -56,11 +56,15 @@ class AttachmentsController < ApplicationController
             User.current.preference.save
           end
           render :action => 'diff'
+        elsif @attachment.is_image?
+          render :action => 'image'
+        elsif @attachment.is_pdf?
+          render :action => 'pdf'
         elsif @attachment.is_text? && @attachment.filesize <= Setting.file_max_size_displayed.to_i.kilobyte
           @content = File.read(@attachment.diskfile, :mode => "rb")
           render :action => 'file'
-        elsif @attachment.is_image?
-          render :action => 'image'
+        elsif @content = @attachment.markdownized_preview_content
+          render :action => 'markdownized'
         else
           render :action => 'other'
         end
@@ -296,8 +300,8 @@ class AttachmentsController < ApplicationController
         "application/octet-stream"
     end
 
-    if is_thumb && content_type == "application/pdf"
-      # PDF previews are stored in PNG format
+    if is_thumb && !content_type.start_with?("image/")
+      # Thumbnails of non-image files are stored in PNG format
       content_type = "image/png"
     end
 

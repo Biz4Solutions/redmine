@@ -17,8 +17,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-require 'html/pipeline'
-
 module Redmine
   module WikiFormatting
     module CommonMark
@@ -35,6 +33,7 @@ module Redmine
           tasklist: true,
           shortcodes: false,
           alerts: true,
+          cjk_friendly_emphasis: true,
         }.freeze,
 
         # https://github.com/gjtorikian/commonmarker#parse-options
@@ -53,25 +52,49 @@ module Redmine
         }.freeze,
       }.freeze
 
-      MarkdownPipeline = HTML::Pipeline.new [
-        MarkdownFilter,
-        SanitizationFilter,
-        SyntaxHighlightFilter,
-        FixupAutoLinksFilter,
-        ExternalLinksFilter,
-        AlertsIconsFilter
-      ], PIPELINE_CONFIG
+      SANITIZER = SanitizationFilter.new
+      SCRUBBERS = [
+        Redmine::WikiFormatting::CopypreScrubber.new,
+        SyntaxHighlightScrubber.new,
+        Redmine::WikiFormatting::TablesortScrubber.new,
+        FixupAutoLinksScrubber.new,
+        ExternalLinksScrubber.new,
+        AlertsIconsScrubber.new
+      ]
 
       class Formatter
         include Redmine::WikiFormatting::SectionHelper
 
-        def initialize(text)
+        def initialize(text, options = {})
           @text = text
+          @options = options
         end
 
         def to_html(*args)
-          result = MarkdownPipeline.call @text
-          result[:output].to_s
+          html = MarkdownFilter.new(@text, PIPELINE_CONFIG).call
+          fragment = Redmine::WikiFormatting::HtmlParser.parse(html)
+          SANITIZER.call(fragment)
+
+          scrubbers = SCRUBBERS + post_processor_scrubbers
+          scrubber = Loofah::Scrubber.new do |node|
+            scrubbers.each do |s|
+              result = s.scrub(node)
+              break result if result == Loofah::Scrubber::STOP
+              break if node.parent.nil?
+            end
+          end
+
+          fragment.scrub!(scrubber)
+          fragment.to_s
+        end
+
+        private
+
+        def post_processor_scrubbers
+          [
+            Redmine::WikiFormatting::InlineAttachmentsScrubber.new(@options),
+            Redmine::WikiFormatting::HiresImagesScrubber.new
+          ]
         end
       end
     end

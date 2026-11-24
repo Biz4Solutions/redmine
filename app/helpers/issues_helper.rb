@@ -122,14 +122,14 @@ module IssuesHelper
       buttons =
         if manage_relations
           link_to(
-            sprite_icon('link-break', l(:label_delete_link_to_subtask)),
+            sprite_icon('link-break', l(:label_subtask_remove)),
             issue_path(
               {:id => child.id, :issue => {:parent_issue_id => ''},
                :back_url => issue_path(issue.id), :no_flash => '1'}
             ),
             :method => :put,
             :data => {:confirm => l(:text_are_you_sure)},
-            :title => l(:label_delete_link_to_subtask),
+            :title => l(:label_subtask_remove),
             :class => 'icon-only icon-link-break'
           )
         else
@@ -225,12 +225,12 @@ module IssuesHelper
       buttons =
         if manage_relations
           link_to(
-            sprite_icon('link-break', l(:label_relation_delete)),
+            sprite_icon('link-break', l(:label_relation_remove)),
             relation_path(relation, issue_id: issue.id),
             :remote => true,
             :method => :delete,
             :data => {:confirm => l(:text_are_you_sure)},
-            :title => l(:label_relation_delete),
+            :title => l(:label_relation_remove),
             :class => 'icon-only icon-link-break'
           )
         else
@@ -295,7 +295,7 @@ module IssuesHelper
 
   # Returns a link for adding a new subtask to the given issue
   def link_to_new_subtask(issue)
-    link_to(l(:button_add), url_for_new_subtask(issue))
+    link_to(sprite_icon('add', l(:button_add)), url_for_new_subtask(issue), :class => 'icon icon-add')
   end
 
   def url_for_new_subtask(issue)
@@ -347,7 +347,7 @@ module IssuesHelper
       # rubocop:disable Performance/Sum
       content =
         content_tag('div', @left.reduce(&:+), :class => 'splitcontentleft') +
-        content_tag('div', @right.reduce(&:+), :class => 'splitcontentleft')
+        content_tag('div', @right.reduce(&:+), :class => 'splitcontentright')
       # rubocop:enable Performance/Sum
 
       content_tag('div', content, :class => 'splitcontent')

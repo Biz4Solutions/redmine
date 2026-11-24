@@ -47,12 +47,14 @@ class WikiPage < ApplicationRecord
                      :preload => [:content, {:wiki => :project}],
                      :permission => :view_wiki_pages,
                      :project_key => "#{Wiki.table_name}.project_id"
+  acts_as_webhookable
+  include WikiPage::Webhookable
 
   attr_accessor :redirect_existing_links
   attr_writer   :deleted_attachment_ids
 
   validates_presence_of :title
-  validates_format_of :title, :with => /\A[^,\.\/\?\;\|\s]*\z/
+  validates_format_of :title, :with => /\A[^,.\/?;|\s]*\z/
   validates_uniqueness_of :title, :scope => :wiki_id, :case_sensitive => false
   validates_length_of :title, maximum: 255
   validates_associated :content
@@ -190,6 +192,10 @@ class WikiPage < ApplicationRecord
 
   def project
     wiki.try(:project)
+  end
+
+  def project_id
+    wiki&.project_id
   end
 
   def text

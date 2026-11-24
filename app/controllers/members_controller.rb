@@ -18,7 +18,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 class MembersController < ApplicationController
-  model_object Member
+  self.model_object = Member
+
   before_action :find_model_object, :except => [:index, :new, :create, :autocomplete]
   before_action :find_project_from_association, :except => [:index, :new, :create, :autocomplete]
   before_action :find_project_by_project_id, :only => [:index, :new, :create, :autocomplete]
@@ -27,17 +28,24 @@ class MembersController < ApplicationController
 
   require_sudo_mode :create, :update, :destroy
 
+  include MembersHelper
+
   def index
     scope = @project.memberships
-    @offset, @limit = api_offset_and_limit
-    @member_count = scope.count
-    @member_pages = Paginator.new @member_count, @limit, params['page']
-    @offset ||= @member_pages.offset
-    @members = scope.includes(:principal, :roles).order(:id).limit(@limit).offset(@offset).to_a
+    @members = scope.includes(:principal, :roles).order(:id)
 
     respond_to do |format|
       format.html {head :not_acceptable}
-      format.api
+      format.api do
+        @offset, @limit = api_offset_and_limit
+        @member_count = scope.count
+        @member_pages = Paginator.new @member_count, @limit, params['page']
+        @offset ||= @member_pages.offset
+        @members = @members.limit(@limit).offset(@offset).to_a
+      end
+      format.csv do
+        send_data(members_to_csv(@members), type: 'text/csv; header=present', filename: "#{@project.identifier}-members.csv")
+      end
     end
   end
 

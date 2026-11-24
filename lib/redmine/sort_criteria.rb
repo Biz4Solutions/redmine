@@ -74,7 +74,7 @@ module Redmine
 
     def sort_clause(sortable_columns)
       if sortable_columns.is_a?(Array)
-        sortable_columns = sortable_columns.inject({}) {|h, k| h[k]=k; h}
+        sortable_columns = sortable_columns.to_h { |k| [k, k] }
       end
 
       sql = self.collect do |k, o|
@@ -83,7 +83,7 @@ module Redmine
           s.collect {|c| append_order(c, o)}
         end
       end.flatten.compact
-      sql.blank? ? nil : sql
+      (sql.presence)
     end
 
     private

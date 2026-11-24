@@ -130,6 +130,7 @@ class Version < ApplicationRecord
   acts_as_attachable :view_permission => :view_files,
                      :edit_permission => :manage_files,
                      :delete_permission => :manage_files
+  acts_as_webhookable
 
   VERSION_STATUSES = %w(open locked closed)
   VERSION_SHARINGS = %w(none descendants hierarchy tree system)

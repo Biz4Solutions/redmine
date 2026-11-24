@@ -7,7 +7,7 @@ https://www.redmine.org/
 
 == Requirements
 
-* Ruby 3.2, 3.3, 3.4
+* Ruby 3.2, 3.3, 3.4, 4.0
 
 * A database:
   * MySQL (tested with MySQL 8)
@@ -20,6 +20,9 @@ Optional:
   available in PATH)
 * ImageMagick (to enable thumbnail generation and Gantt export to PNG images)
 * Ghostscript (to enable thumbnail generation for PDF attachments)
+* Pandoc, to enable previews for Microsoft Office (.docx, .xlsx, .pptx) and
+  LibreOffice Writer (.odt) documents. Version 3.8.3 or later is recommended.
+  Older versions of Pandoc supports only .docx and .odt documents.
 
 Supported browsers:
 The current version of Firefox, Safari, Chrome, Chromium and Microsoft Edge.
@@ -144,6 +147,7 @@ Please do not enter your SMTP settings in environment.rb.
 
 == Known Issues
 
+* Redmine running on Ruby versions 4.0.0 through 4.0.2 has a known performance issue when rendering wiki syntax. For more details, see https://www.redmine.org/issues/43650.
 * Redmine does not start on Ruby 3.3.0 due to an issue with Ruby's handling of anonymous arguments. It was fixed in Ruby 3.3.1. See https://bugs.ruby-lang.org/issues/20090 for details.
 
 == References
