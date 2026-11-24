@@ -33,14 +33,12 @@ class TimesheetsControllerTest < Redmine::ControllerTest
   end
 
   def test_other_user_cannot_view_timesheet
-    skip "SECURITY: TimesheetsController#show has no ownership/approver check; any logged-in user sees others' time entries"
     @request.session[:user_id] = @intruder.id
     get :show, params: {id: @timesheet.id}
     assert_response :forbidden
   end
 
   def test_other_user_index_does_not_list_foreign_timesheets
-    skip "SECURITY: TimesheetsController#index starts from Timesheet.all; any logged-in user lists all timesheets"
     @request.session[:user_id] = @intruder.id
     get :index
     assert_response :success
@@ -48,9 +46,55 @@ class TimesheetsControllerTest < Redmine::ControllerTest
   end
 
   def test_other_user_cannot_submit_timesheet
-    skip "SECURITY: TimesheetsController#submit has no owner check; any logged-in user can submit and lock another user's entries"
     @request.session[:user_id] = @intruder.id
     post :submit, params: {id: @timesheet.id}
     assert @timesheet.reload.draft?, 'a non-owner must not be able to submit (and lock) the timesheet'
+  end
+
+  def test_approver_of_entry_project_can_view_timesheet
+    approver = create_user!('ts_approver')
+    add_member!(@project, approver, 50)
+    role.add_permission!(:approve_time_entries)
+    @request.session[:user_id] = approver.id
+    get :show, params: {id: @timesheet.id}
+    assert_response :success
+  end
+
+  def test_approver_of_another_project_cannot_view_timesheet
+    approver = create_user!('ts_approver')
+    add_member!(create_project!('PROJ-X'), approver, 50)
+    role.add_permission!(:approve_time_entries)
+    @request.session[:user_id] = approver.id
+    get :show, params: {id: @timesheet.id}
+    assert_response :forbidden
+  end
+
+  def test_admin_can_view_timesheet
+    @request.session[:user_id] = 1
+    get :show, params: {id: @timesheet.id}
+    assert_response :success
+  end
+
+  def test_pending_approval_lists_only_visible_timesheets
+    @timesheet.submit
+    role.add_permission!(:approve_time_entries)
+    other_approver = create_user!('ts_approver')
+    add_member!(create_project!('PROJ-X'), other_approver, 50)
+    @request.session[:user_id] = other_approver.id
+    get :pending_approval
+    assert_response :success
+    assert_select "a[href='/timesheets/#{@timesheet.id}']", 0
+  end
+
+  def test_bulk_submit_ignores_foreign_timesheets
+    @request.session[:user_id] = @intruder.id
+    post :bulk_submit, params: {ids: [@timesheet.id]}
+    assert @timesheet.reload.draft?
+  end
+
+  def test_owner_can_submit_own_timesheet
+    @request.session[:user_id] = @owner.id
+    post :submit, params: {id: @timesheet.id}
+    assert @timesheet.reload.pending_approval?
   end
 end

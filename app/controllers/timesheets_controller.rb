@@ -2,7 +2,7 @@ class TimesheetsController < ApplicationController
   before_action :require_login
   before_action :find_timesheet, only: [:show, :edit, :update, :submit, :destroy]
   before_action :find_timesheets, only: [:bulk_submit, :bulk_approve, :bulk_reject]
-  before_action :check_editability, only: [:edit, :update, :destroy]
+  before_action :check_editability, only: [:edit, :update, :submit, :destroy]
   before_action :check_approval_permission, only: [:bulk_approve, :bulk_reject]
   
   helper :timelog
@@ -83,6 +83,8 @@ class TimesheetsController < ApplicationController
     submitted_count = 0
     
     @timesheets.each do |timesheet|
+      next unless timesheet.user_id == User.current.id
+
       if timesheet.submit
         # Notify approvers
         notify_approvers(timesheet)
@@ -130,7 +132,7 @@ class TimesheetsController < ApplicationController
   end
   
   def pending_approval
-    @timesheets = Timesheet.pending_approval.order(start_date: :desc)
+    @timesheets = Timesheet.visible.pending_approval.order(start_date: :desc)
     
     # Use Redmine's pagination helper
     @limit = per_page_option
@@ -150,12 +152,13 @@ class TimesheetsController < ApplicationController
   
   def find_timesheet
     @timesheet = Timesheet.find(params[:id])
+    render_403 unless @timesheet.visible?
   rescue ActiveRecord::RecordNotFound
     render_404
   end
   
   def find_timesheets
-    @timesheets = Timesheet.where(id: params[:id] || params[:ids]).to_a
+    @timesheets = Timesheet.visible.where(id: params[:id] || params[:ids]).to_a
     
     raise ActiveRecord::RecordNotFound if @timesheets.empty?
   rescue ActiveRecord::RecordNotFound
@@ -177,8 +180,8 @@ class TimesheetsController < ApplicationController
   end
   
   def timesheets_scope
-    scope = Timesheet.all
-    
+    scope = Timesheet.visible
+
     # Filter by user
     if params[:user_id] == 'me'
       scope = scope.where(user_id: User.current.id)

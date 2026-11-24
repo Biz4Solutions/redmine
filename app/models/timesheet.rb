@@ -17,6 +17,18 @@ class Timesheet < ApplicationRecord
   scope :approved, -> { where(status: STATUS_APPROVED) }
   scope :rejected, -> { where(status: STATUS_REJECTED) }
   scope :for_user, ->(user_id) { where(user_id: user_id) }
+  # Own timesheets, all of them for admins, plus those with time entries in
+  # projects where the user can approve time entries.
+  scope :visible, (lambda do |user = User.current|
+    next all if user.admin?
+
+    approvable = Project.where(Project.allowed_to_condition(user, :approve_time_entries)).select(:id)
+    where(user_id: user.id).or(where(id: TimeEntry.where(project_id: approvable).select(:timesheet_id)))
+  end)
+
+  def visible?(user = User.current)
+    Timesheet.visible(user).exists?(id: id)
+  end
   
   # Validations
   validates :user_id, :start_date, :end_date, presence: true
