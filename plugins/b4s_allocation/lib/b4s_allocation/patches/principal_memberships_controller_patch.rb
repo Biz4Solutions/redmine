@@ -26,7 +26,7 @@ module B4sAllocation
       end
 
       def update
-        membership_params = params.require(:membership).permit(:role_ids => [], :allocation_percentage => nil, :start_date => nil, :end_date => nil)
+        membership_params = params.require(:membership).permit(:allocation_percentage, :start_date, :end_date, :billable, :role_ids => [])
 
         # Update roles
         @membership.attributes = membership_params.slice(:role_ids)
@@ -35,6 +35,8 @@ module B4sAllocation
         @membership.allocation_percentage = membership_params[:allocation_percentage] if membership_params[:allocation_percentage].present?
         @membership.start_date = membership_params[:start_date] if membership_params[:start_date].present?
         @membership.end_date = membership_params[:end_date] if membership_params[:end_date].present?
+        # Unchecked checkboxes are not submitted
+        @membership.billable = membership_params[:billable] == '1'
 
         saved = @membership.save
         respond_to do |format|

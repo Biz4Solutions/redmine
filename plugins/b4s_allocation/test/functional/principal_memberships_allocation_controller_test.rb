@@ -32,10 +32,26 @@ class PrincipalMembershipsAllocationControllerTest < Redmine::ControllerTest
   end
 
   def test_update_changes_allocation
-    skip 'BUG: PrincipalMembershipsController#update permits :allocation_percentage => nil (and dates), which strong params drops; edits from the user Memberships tab are ignored but report success'
     m = add_member!(@project, @user, 30)
     put :update, params: {user_id: @user.id, id: m.id, membership: {role_ids: [role.id], allocation_percentage: 45}}
     assert_equal 45, m.reload.allocation_percentage
-    assert_equal l(:notice_successful_update), flash[:notice]
+    assert_equal I18n.t(:notice_successful_update), flash[:notice]
+  end
+
+  def test_update_changes_dates
+    m = add_member!(@project, @user, 30)
+    put :update, params: {user_id: @user.id, id: m.id,
+                          membership: {role_ids: [role.id], start_date: '2026-12-01', end_date: '2027-03-31'}}
+    m.reload
+    assert_equal Date.new(2026, 12, 1), m.start_date
+    assert_equal Date.new(2027, 3, 31), m.end_date
+  end
+
+  def test_update_billable_checkbox
+    m = add_member!(@project, @user, 30, billable: false)
+    put :update, params: {user_id: @user.id, id: m.id, membership: {role_ids: [role.id], billable: '1'}}
+    assert m.reload.billable
+    put :update, params: {user_id: @user.id, id: m.id, membership: {role_ids: [role.id]}}
+    assert_not m.reload.billable
   end
 end
