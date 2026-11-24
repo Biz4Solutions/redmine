@@ -44,7 +44,7 @@
     <td class="date-range"><%= timesheet.date_range %></td>
     <td class="hours"><%= html_hours(format_hours(timesheet.total_hours)) %></td>
     <td class="buttons">
-      <%= link_to l(:button_view), timesheet_path(timesheet), :class => 'icon icon-magnifier' %>
+      <%= link_to sprite_icon('zoom-in', l(:button_view)), timesheet_path(timesheet), :class => 'icon icon-magnifier' %>
     </td>
   </tr>
   <% end %>

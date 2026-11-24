@@ -1,5 +1,5 @@
 <div class="contextual">
-  <%= link_to l(:button_log_time), 
+  <%= link_to sprite_icon('time-add', l(:button_log_time)), 
               new_time_entry_path,
               :class => 'icon icon-time-add' if User.current.allowed_to?(:log_time, @project) %>
 </div>
@@ -35,7 +35,7 @@
       <span class="badge badge-warning"><%= l(:label_pending_approval) %></span>
     </td>
     <td class="buttons">
-      <%= link_to l(:label_submit_for_approval), 
+      <%= link_to sprite_icon('checked', l(:label_submit_for_approval)), 
                   submit_time_entry_path(entry),
                   :method => :post,
                   :class => 'icon icon-checked' %>
