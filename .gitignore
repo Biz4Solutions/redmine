@@ -52,3 +52,5 @@
 yarn-error.log
 
 /config/master.key
+/config/credentials.yml.enc
+/config/master.key
