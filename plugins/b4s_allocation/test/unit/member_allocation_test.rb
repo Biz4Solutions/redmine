@@ -40,7 +40,6 @@ class MemberAllocationTest < ActiveSupport::TestCase
   end
 
   def test_total_counts_each_other_allocation_even_when_percentages_are_equal
-    skip 'BUG: validate_allocation_percentage uses .distinct.sum -> SUM(DISTINCT allocation_percentage), equal percentages counted once'
     add_member!(@proj_a, @user, 40)
     add_member!(@proj_b, @user, 40)
     member = build_member(@proj_c, @user, 40)
@@ -80,7 +79,6 @@ class MemberAllocationTest < ActiveSupport::TestCase
   end
 
   def test_bench_reduction_spans_several_bench_projects_by_the_exact_excess
-    skip 'BUG: update_column sets allocation to 0 in memory before remaining_reduction is decremented, so later bench rows are over-reduced'
     bench2_project = create_project!('BENCH2', bench: true)
     b1 = add_member!(@bench, @user, 30)
     b2 = add_member!(bench2_project, @user, 50)
@@ -97,8 +95,18 @@ class MemberAllocationTest < ActiveSupport::TestCase
     assert_equal 10, bench.reload.allocation_percentage
   end
 
+  def test_bench_membership_is_saved_even_when_regular_allocation_is_full
+    add_member!(@proj_a, @user, 100)
+    assert build_member(@bench, @user, 50).save
+  end
+
+  def test_adding_bench_membership_reduces_other_bench_memberships
+    other_bench = add_member!(create_project!('BENCH2', bench: true), @user, 80)
+    add_member!(@bench, @user, 50)
+    assert_equal 50, other_bench.reload.allocation_percentage
+  end
+
   def test_calling_valid_alone_does_not_modify_bench_allocations
-    skip 'BUG: bench reduction runs inside validation (update_column), so valid? or a failed save still mutates other memberships'
     bench = add_member!(@bench, @user, 100)
     build_member(@proj_a, @user, 30).valid?
     assert_equal 100, bench.reload.allocation_percentage
@@ -157,11 +165,34 @@ class MemberAllocationTest < ActiveSupport::TestCase
   end
 
   def test_closing_a_project_expires_its_allocations
-    skip 'BUG?: Project#close and mark_for_deletion use update_all, so the after_update expiry callback only fires on archive'
     m = add_member!(@proj_a, @user, 50)
     @proj_a.reload.close
     m.reload
     assert_equal 0, m.allocation_percentage
+  end
+
+  def test_closing_a_project_expires_allocations_of_its_subprojects
+    child = create_project!('CHILD', parent: @proj_a.reload)
+    m = add_member!(child, @user, 50)
+    @proj_a.reload.close
+    assert_equal 0, m.reload.allocation_percentage
+    assert_equal Date.today, m.end_date
+  end
+
+  def test_scheduling_a_project_for_deletion_expires_its_allocations
+    m = add_member!(@proj_a, @user, 50)
+    Project.mark_for_deletion(@proj_a.reload)
+    m.reload
+    assert_equal 0, m.allocation_percentage
+    assert_equal Date.today, m.end_date
+  end
+
+  def test_closing_a_project_keeps_already_ended_allocations
+    m = add_member!(@proj_a, @user, 50)
+    m.update_columns(start_date: Date.today - 60, end_date: Date.today - 30)
+    @proj_a.reload.close
+    assert_equal Date.today - 30, m.reload.end_date
+    assert_equal 50, m.allocation_percentage
   end
 
   # --- inherited members ---

@@ -31,6 +31,7 @@ class Member < ApplicationRecord
   validate :validate_dates
 
   before_save :set_default_dates
+  after_save :reduce_bench_allocations
   before_destroy :set_issue_category_nil, :remove_from_project_default_assigned_to
 
   scope :active, (lambda do
@@ -349,89 +350,50 @@ class Member < ApplicationRecord
     # Skip validation if user_id is not set yet (happens during initial form submission)
     return if user_id.nil?
 
-    # Calculate total allocation for this user including this record
-    date = Date.today
+    total = other_active_allocations.sum(:allocation_percentage) + allocation_percentage
+    excess = total - 100
+    # Bench memberships always fit: other bench memberships absorb what they can.
+    return if excess <= 0 || project.bench_project
 
-    # Get all active allocations for this user except this one, excluding inherited members
-    other_allocations = self.class.joins(:member_roles, :project)
-                            .where(user_id: user_id)
-                            .where("(start_date IS NULL OR start_date <= ?)", date)
-                            .where("(end_date IS NULL OR end_date >= ?)", date)
-                            .where(member_roles: { inherited_from: nil })
-                            .where(projects: { status: Project::STATUS_ACTIVE })  # Only include active projects
-                            .distinct
-
-    # Exclude this record if it's being updated
-    other_allocations = other_allocations.where.not(id: id) unless new_record?
-
-    # Sum up other allocations
-    total_other_allocations = other_allocations.sum(:allocation_percentage) || 0
-
-    # Add the new allocation percentage
-    total = total_other_allocations + allocation_percentage
-
-    if total > 100
-      # If this is a bench project, we need to reduce bench project allocations
-      if project.bench_project
-        # Get all bench project allocations for this user
-        bench_allocations = other_allocations.joins(:project)
-                                          .where(projects: { bench_project: true, status: Project::STATUS_ACTIVE })
-                                          .order(:allocation_percentage)
-
-        # Calculate how much we need to reduce
-        excess = total - 100
-
-        # Reduce bench project allocations starting from the lowest percentage
-        remaining_reduction = excess
-        bench_allocations.each do |allocation|
-          if remaining_reduction <= 0
-            break
-          end
-
-          if allocation.allocation_percentage <= remaining_reduction
-            # Reduce this allocation to 0
-            allocation.update_column(:allocation_percentage, 0)
-            remaining_reduction -= allocation.allocation_percentage
-          else
-            # Reduce this allocation by the remaining amount
-            allocation.update_column(:allocation_percentage, allocation.allocation_percentage - remaining_reduction)
-            remaining_reduction = 0
-          end
-        end
-      else
-        # For non-bench projects, check if we can reduce bench allocations to accommodate this
-        bench_allocations = other_allocations.joins(:project)
-                                          .where(projects: { bench_project: true, status: Project::STATUS_ACTIVE })
-                                          .order(:allocation_percentage)
-
-        # Calculate how much we need to reduce from bench allocations
-        excess = total - 100
-
-        # Try to reduce bench allocations
-        remaining_reduction = excess
-        bench_allocations.each do |allocation|
-          if remaining_reduction <= 0
-            break
-          end
-
-          if allocation.allocation_percentage <= remaining_reduction
-            # Reduce this allocation to 0
-            allocation.update_column(:allocation_percentage, 0)
-            remaining_reduction -= allocation.allocation_percentage
-          else
-            # Reduce this allocation by the remaining amount
-            allocation.update_column(:allocation_percentage, allocation.allocation_percentage - remaining_reduction)
-            remaining_reduction = 0
-          end
-        end
-
-        # If we still have excess after reducing all bench allocations, show error
-        if remaining_reduction > 0
-          errors.add(:allocation_percentage, :exceeds_total,
-                    message: "would exceed 100% total allocation for this user (total would be #{total}%)")
-        end
-      end
+    # Bench memberships are reduced after save (see reduce_bench_allocations);
+    # reject only what they cannot absorb.
+    if excess > other_bench_allocations.sum(:allocation_percentage)
+      errors.add(:allocation_percentage, :exceeds_total,
+                 message: "would exceed 100% total allocation for this user (total would be #{total}%)")
     end
+  end
+
+  # Runs after a successful save, inside its transaction, so a rejected
+  # save or a plain valid? call never changes other memberships.
+  def reduce_bench_allocations
+    return if allocation_percentage.nil? || user_id.nil?
+
+    remaining = other_active_allocations.sum(:allocation_percentage) + allocation_percentage - 100
+    other_bench_allocations.order(:allocation_percentage).each do |bench|
+      break if remaining <= 0
+
+      cut = [bench.allocation_percentage, remaining].min
+      bench.update_column(:allocation_percentage, bench.allocation_percentage - cut)
+      remaining -= cut
+    end
+  end
+
+  # Today's direct (non-inherited) memberships of this user in active
+  # projects, excluding this one. Uses a subquery, not a join, so members
+  # with several roles are counted once and equal percentages are all summed.
+  def other_active_allocations
+    date = Date.today
+    scope = self.class.joins(:project)
+                .where(user_id: user_id)
+                .where(id: MemberRole.where(inherited_from: nil).select(:member_id))
+                .where("(start_date IS NULL OR start_date <= ?)", date)
+                .where("(end_date IS NULL OR end_date >= ?)", date)
+                .where(projects: { status: Project::STATUS_ACTIVE })
+    id ? scope.where.not(id: id) : scope
+  end
+
+  def other_bench_allocations
+    other_active_allocations.where(projects: { bench_project: true })
   end
 
   def set_default_dates

@@ -428,6 +428,7 @@ class Project < ApplicationRecord
         p.reload
         p.self_and_descendants.pluck(:id)
       end
+      Member.expire_allocations_for_project(ids, Date.today)
       where(id: ids).update_all(status: STATUS_SCHEDULED_FOR_DELETION)
     end
   end
@@ -465,6 +466,7 @@ class Project < ApplicationRecord
   end
 
   def close
+    Member.expire_allocations_for_project(self_and_descendants.status(STATUS_ACTIVE).ids, Date.today)
     self_and_descendants.status(STATUS_ACTIVE).update_all :status => STATUS_CLOSED
   end
 
