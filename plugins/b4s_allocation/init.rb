@@ -14,6 +14,12 @@ end
   Project => B4sAllocation::Patches::ProjectPatch,
   TimeEntry => B4sAllocation::Patches::TimeEntryPatch,
   TimeEntryQuery => B4sAllocation::Patches::TimeEntryQueryPatch,
+  MembersHelper => B4sAllocation::Patches::MembersHelperPatch,
+  MyHelper => B4sAllocation::Patches::MyHelperPatch,
+  MembersController => B4sAllocation::Patches::MembersControllerPatch,
+  PrincipalMembershipsController => B4sAllocation::Patches::PrincipalMembershipsControllerPatch,
+  MyController => B4sAllocation::Patches::MyControllerPatch,
+  TimelogController => B4sAllocation::Patches::TimelogControllerPatch,
 }.each do |klass, patch|
   klass.prepend(patch) unless klass < patch
 end
