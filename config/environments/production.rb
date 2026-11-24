@@ -96,4 +96,8 @@ Rails.application.configure do
 
   # Automatically execute asset precompilation on startup in case of changes have been detected in assets
   config.assets.redmine_detect_update = true
+
+  # Only accept requests for our own hostname. Blocks Host / X-Forwarded-Host
+  # header injection, which otherwise turns redirects into an open redirect.
+  config.hosts << "redmine.biz4solutions.com"
 end
