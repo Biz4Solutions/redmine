@@ -2595,10 +2595,3 @@ th[role=columnheader]:not(.no-sort):hover:after {
 #sidebar .api-key-actions .copy-api-key-link svg {
   opacity: 1;
 }
-
-/* Override column width for members view */
-#principals_for_new_member .objects-selection #principals {
-  column-width: 275px !important;
-  -webkit-column-width: 275px !important;
-  -moz-column-width: 275px !important;
-}

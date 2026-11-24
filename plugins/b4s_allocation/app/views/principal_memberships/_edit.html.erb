@@ -1,0 +1,43 @@
+<%= form_for(@membership, :url => principal_membership_path(@principal, @membership),
+                          :as => :membership,
+                          :remote => request.xhr?,
+                          :method => :put) do %>
+  <p>
+  <% @roles.each do |role| %>
+    <label class="block">
+      <%= check_box_tag 'membership[role_ids][]',
+            role.id, @membership.roles.to_a.include?(role),
+            :id => nil,
+            :disabled => !@membership.role_editable?(role) %> <%= role.name %>
+      <%= render_role_inheritance(@membership, role) %>
+    </label>
+  <% end %>
+  </p>
+  <%= hidden_field_tag 'membership[role_ids][]', '', :id => nil %>
+  
+  <fieldset class="box">
+    <legend><%= l(:label_allocation) %></legend>
+    <p>
+      <%= label_tag 'membership[allocation_percentage]', l(:field_allocation_percentage) %>
+      <%= number_field_tag 'membership[allocation_percentage]', @membership.allocation_percentage, min: 0, max: 100, step: 0.01 %>%
+    </p>
+    <p>
+      <%= label_tag 'membership[start_date]', l(:field_start_date) %>
+      <%= date_field_tag 'membership[start_date]', @membership.start_date %>
+    </p>
+    <p>
+      <%= label_tag 'membership[end_date]', l(:field_end_date) %>
+      <%= date_field_tag 'membership[end_date]', @membership.end_date %>
+    </p>
+    <p>
+      <%= label_tag 'membership[billable]', l(:field_billable) %>
+      <%= check_box_tag 'membership[billable]', '1', @membership.billable %>
+    </p>
+  </fieldset>
+  
+  <p>
+    <%= submit_tag l(:button_save) %>
+    <%= link_to_function l(:button_cancel),
+                         "$('#member-#{@membership.id}-roles').show(); $('#member-#{@membership.id}-form').empty(); return false;" if request.xhr? %>
+  </p>
+<% end %>

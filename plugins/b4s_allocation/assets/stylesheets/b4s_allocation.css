@@ -1,0 +1,6 @@
+/* Override column width for members view */
+#principals_for_new_member .objects-selection #principals {
+  column-width: 275px !important;
+  -webkit-column-width: 275px !important;
+  -moz-column-width: 275px !important;
+}

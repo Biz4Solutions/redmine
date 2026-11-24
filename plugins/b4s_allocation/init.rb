@@ -46,6 +46,9 @@ end
 Redmine::MyPage.singleton_class.prepend(B4sAllocation::Patches::MyPagePatch) unless Redmine::MyPage.singleton_class < B4sAllocation::Patches::MyPagePatch
 Mailer.include(B4sAllocation::Patches::MailerPatch) unless Mailer < B4sAllocation::Patches::MailerPatch
 
+# Registers the view hooks (ViewListener subclasses register on load).
+B4sAllocation::Hooks
+
 # Plugin config/routes.rb is drawn after core routes, where core's
 # GET /time_entries/:id would capture this path, so prepend it.
 Rails.application.routes.prepend do

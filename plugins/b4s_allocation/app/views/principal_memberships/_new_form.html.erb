@@ -1,0 +1,44 @@
+<fieldset class="box">
+  <legend><%= toggle_checkboxes_link('.projects-selection input:enabled') %><%= l(:label_project_plural) %></legend>
+  <div class="objects-selection">
+    <div class="projects-selection">
+    <%= render_project_nested_lists(@projects) do |p| %>
+      <label>
+        <%= check_box_tag('membership[project_ids][]', p.id, false, :id => nil, :disabled => @principal.member_of?(p)) %> <%= p %>
+      </label>
+    <% end %>
+    </div>
+  </div>
+</fieldset>
+
+<fieldset class="box">
+  <legend><%= toggle_checkboxes_link('.roles-selection input') %><%= l(:label_role_plural) %></legend>
+  <div class="roles-selection">
+  <% @roles.each do |role| %>
+    <label>
+      <%= check_box_tag 'membership[role_ids][]', role.id, false, :id => nil %>
+      <%= role %>
+    </label>
+  <% end %>
+  </div>
+</fieldset>
+
+<fieldset class="box">
+  <legend><%= l(:label_allocation) %></legend>
+  <p>
+    <%= label_tag 'membership[allocation_percentage]', l(:field_allocation_percentage) %>
+    <%= number_field_tag 'membership[allocation_percentage]', 100, min: 0, max: 100, step: 0.01 %>%
+  </p>
+  <p>
+    <%= label_tag 'membership[start_date]', l(:field_start_date) %>
+    <%= date_field_tag 'membership[start_date]', nil %>
+  </p>
+  <p>
+    <%= label_tag 'membership[end_date]', l(:field_end_date) %>
+    <%= date_field_tag 'membership[end_date]', nil %>
+  </p>
+  <p>
+    <%= label_tag 'membership[billable]', l(:field_billable) %>
+    <%= check_box_tag 'membership[billable]', '1', true %>
+  </p>
+</fieldset>
