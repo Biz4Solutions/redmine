@@ -28,6 +28,7 @@
 /log/mongrel_debug
 /plugins/*
 !/plugins/README
+!/plugins/b4s_allocation/
 /public/assets/*
 /public/dispatch.*
 /public/plugin_assets/*
